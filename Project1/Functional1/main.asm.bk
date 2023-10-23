@@ -1,0 +1,82 @@
+;---------------------------------------------------------------------------------------------------------
+; 
+; File    : main.asm 
+; 
+; Created : 30-09-2023
+; Author  : Fábio Pacheco
+;
+; Descrip : Pretends to manage the state of multiple LEDs by this order below
+;           SW1 - D4,D5 
+;           SW2 - D3,D6 
+;           SW3 - D2,D7 
+;           SW4 - D1,D8 
+;           SW6 - ALL OFF 
+;
+;---------------------------------------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------------------------------------
+; Instruction to the compiler
+;---------------------------------------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------------------------------------
+; Inicializations and setup of the hardware
+;---------------------------------------------------------------------------------------------------------
+
+_setup:
+  ; We are using PORTA to the switches, and PORTC to the LEDs
+  ; Setup up PORTA
+  ldi r16, 0x00                        ; Load to register 16 all the bits as inputs
+  out DDRA, r16                        ; Define DDRA all the bits to inputs
+  ldi r16, 0b11010000                  ; Load to register 16 the inputs are not being use
+  out PORTA, r16                       ; Forcing the above inputs to fix value, prevent flutuation
+ 
+  ; Setup up PORTC
+  ldi r16, 0xFF                        ; Load to register 16 all the bits as outputs
+  out DDRC, r16                        ; Define DDRC all the bits as outputs
+
+  ; Setup the combinations
+  ldi r20, 0b00011000                  ; The LEDs D4 and D5 turned off
+  ldi r21, 0b00100100                  ; The LEDs D3 and D6 turned off
+  ldi r22, 0b01000010                  ; The LEDs D2 and D7 turned off
+  ldi r23, 0b10000001                  ; The LEDs D1 and D8 turned off
+  
+;---------------------------------------------------------------------------------------------------------
+; Routines
+;---------------------------------------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------------------------------------
+; Logic Code
+;---------------------------------------------------------------------------------------------------------
+
+_loop:
+  ; If switch 6 is pressed it overwrites every other signal, turning off all the LEDs
+  in r16, PINA                         ; Get the byte from the PINA and load to register 16
+  ori r16, 0b11011111                  ; Independent if the user pressed other switches, sw6 will preserv
+  cpi r16, 0b11011111                  ; Compare and check if switch 6 is pressed
+  breq _turn_off                       ; If the zero flag is one turn off every LED, else continue
+
+  ldi r16, 0x00                        ; Load to register 16 the idea of everything being on
+  
+  sbic PINA, 0                         ; Check if the 1 switch wasn't pressed, <true> jump next line
+  add r16, r20                         ; If isn't pressed
+    
+  sbic PINA, 1                         ; Check if the 2 switch wasn't pressed, <true> jump next line
+  add r16, r21                         ; If isn't pressed
+
+  sbic PINA, 2                         ; Check if the 3 switch wasn't pressed, <true> jump next line
+  add r16, r22                         ; If isn't pressed
+
+  sbic PINA, 3                         ; Check if the 4 switch wasn't pressed, <true> jump next line
+  add r16, r23                         ; If isn't pressed
+
+  out PORTC, r16                       ; Send the signal to the LEDs
+  rjmp _loop
+  
+_turn_off:
+  ldi r16, 0xFF                        ; Load to the register 16 the configuration of everything turn off
+  out PORTC, r16                       ; Send the signal to the LEDs
+  rjmp _loop                           ; Return to the main loop
+  
+;---------------------------------------------------------------------------------------------------------
+; End File
+;---------------------------------------------------------------------------------------------------------

@@ -1,0 +1,141 @@
+__ifS1:
+  call _timer                          ; Execute a delay
+  cpi r16, 0xFE                        ; Check if the S1 is activated
+  brne _loop                           ; If it wasn't return to the main  
+
+  inc r18                              ; Increment a value to register 18, possibilities [2, 3, 4]
+  cpi r18, 0b00000100                  ; Check if the register 18 reached the 4
+  breq _main                           ; Reached 4 back to the main routine, else continue
+  cpi r18, 0b00000010                  ; Check if the register 18 reached the 2, if its first it will go to 3, otherwise either 4 or 2
+  brne _loop                           ; If it reached 2 means the person came from S2 so set the 6 bit and 7 bit
+  sbr r18, 7                           ; Set bit 7 means it already did passed in one sensor
+  sbr r18, 6                           ; Set bit 6 means the person came from S2 to S1
+      
+  rjmp _loop                           ; Back to the loop but now waiting for the S2
+
+__ifS2:
+  call _timer                          ; Execute a delay
+  cpi r16, 0xDF                        ; Check if the S2 is activated
+  brne _loop                           ; If it wasn't return to the main  
+
+  dec r18                              ; Decrement a value to register 18, possibilities [0, 1, 2]
+  cpi r18, 0b00000000                  ; Check if the register 18 reached the 0
+  breq _main                           ; Reached 0 back to the main routine, else continue
+  cpi r18, 0b00000010                  ; Check if the register 18 reached the 2, if its first it will go to 1, otherwise either 0 or 2
+  brne _loop                           ; If it reached 2 means the person came from S1 so clear the 6 bit and set 7 bit
+  sbr r18, 7                           ; Set bit 7 means it already did passed in one sensor
+  cbr r18, 6                           ; Clear bit 6 means the person came from S1 to S2
+
+  rjmp _loop                           ; Back to the loop but now waiting for the S1
+
+_main:
+  ldi r18, 0x02                        ; Load to register 18 the value 2, it will be used to check if the user passed in S1 S2
+  ; Theory 
+  ;   Bit 7 means if any sensor was triggered in the loop, 0 wasn't 1 was
+  ;   Bit 6 means if a person came trough S1-S2 or S2-S1 , 0 positive 1 negative
+  ;   Initial bits the actual number, if it represents two means both were pressed
+
+
+:::::::::::::::::::::::::::::::
+
+__ifS1:
+  cpi r31, 1
+  breq _loop
+  inc r31
+
+  call _timer                          ; Execute a delay
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs 
+  cpi r16, 0xFE                        ; Check if the S1 is activated
+  brne _loop                           ; If it wasn't return to the main  
+
+  inc r18                              ; Increment a value to register 18, possibilities [2, 3, 4]
+  cpi r18, 0b00000100                  ; Check if the register 18 reached the 4
+  breq _main                           ; Reached 4 back to the main routine, else continue
+  cpi r18, 0b00000010                  ; Check if the register 18 reached the 2, if its first it will go to 3, otherwise either 4 or 2
+  brne _loop                           ; If it reached 2 means the person came from S2 so set the 6 bit and 7 bit
+  ori r18, 0b11000000                  ; Set bit 6,7 means it already did passed in one sensor and came from S2 to S1
+      
+  rjmp __check                         ; Back to the loop but now to check
+
+__ifS2:
+  cpi r30, 1
+  breq _loop
+  inc r30
+
+  call _timer                          ; Execute a delay
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xDF                        ; Check if the S2 is activated
+  brne _loop                           ; If it wasn't return to the main  
+
+  dec r18                              ; Decrement a value to register 18, possibilities [0, 1, 2]
+  cpi r18, 0b00000000                  ; Check if the register 18 reached the 0
+  breq _main                           ; Reached 0 back to the main routine, else continue
+  cpi r18, 0b00000010                  ; Check if the register 18 reached the 2, if its first it will go to 1, otherwise either 0 or 2
+  brne _loop                           ; If it reached 2 means the person came from S1 so clear the 6 bit and set 7 bit
+  ori r18, 0b10000000                  ; Set bit 7 means it already did passed in one sensor
+  
+  rjmp __check                         ; Back to the loop but now to check
+
+__addP:
+  cpi numUsed, Nmax                    ; Compare to see if max was reached
+  breq _closeDoor                      ; If the compare is equal back to the main and close the door
+  inc numUsed
+
+  cbi PORTA, LS                        ; Turn light on
+
+  ldi r17, 0x01                        ; Move the value inside the number of open spaces to the argument 17
+  set                                  ; Set the T flag to use the decrement as argument for the load_move
+  call _loadMove                       ; Load the new value to segment from the RAM
+  out PORTC, r16                       ; R16 as the argument of segment from the RAM
+  rjmp _main
+
+__subP:
+  cpi numUsed, 0                       ; Compare to see if max was reached
+  breq _closeLight                     ; If the compare is equal back to the main and close the light
+  dec numUsed                          ; If this number reached the max ( 9 ) 
+
+  sbi PORTA, PE                        ; Open the door
+
+  ldi r17, 0x01                        ; Move the value inside the number of open spaces to the argument 17
+  clt                                  ; Set the T flag to use the decrement as argument for the load_move
+  call _loadMove                       ; Load the new value to segment from the RAM
+  out PORTC, r16                       ; R16 as the argument of segment from the RAM
+  rjmp _main
+
+_closeDoor:
+  cbi PORTA, PE                        ; Close the door
+  rjmp _main
+
+_closeLight:
+  sbi PORTA, LS                        ; Turn off te light
+  rjmp _main
+
+
+
+_main:
+  ldi r18, 0x02                        ; Load to register 18 the value 2, it will be used to check if the user passed in S1 S2
+  ldi r30, 0x00
+  ldi r31, 0x00
+
+  ; Theory 
+  ;   Bit 7 means if any sensor was triggered in the loop, 0 wasn't 1 was
+  ;   Bit 6 means if a person came trough S1-S2 or S2-S1 , 0 positive 1 negative
+  ;   Initial bits the actual number, if it represents two means both were pressed
+          
+_loop:
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xFE                        ; Check if the S1 is activated
+  breq __ifS1                          ; If S1 was activated it branchs to check in S1 again, else continue
+
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xDF                        ; Check if the S2 is activated
+  breq __ifS2                          ; If S1 was activated it branchs to check in S2 again, else continue
+ 
+__check:
+  cpi r18, 0b10000010                  ; Means the person came from S1-S2
+  breq __addP                          ; Add a person to the room
+
+  cpi r18, 0b11000010                  ; Means the person came from S2-S1 
+  breq __subP                          ; Subtract a person to the room
+  
+  rjmp _loop                           ; Back to the loop    
