@@ -46,7 +46,7 @@
 .org 0x00                              ; Indicate if the code as an interrrupt with reset
   rjmp _setupCold                      ; Jump to the normal procedure
 
-.org 0x10                              ; Indicate if the sw6 was pressed as an interrupt, INT7
+.org 0x46                              ; Indicate if the sw6 was pressed as an interrupt, INT7
   rjmp _setupWarm                      ; Only need to restart the stack
 
 .equ Xcounter = 241                    ; Defition of the constant X of delay    
@@ -290,7 +290,7 @@ __S2:
   brne _loop                           ; If it wasn't return to the main  
   ; If it arrives here means S2 was read, need to check if its the first time coming trough S2
   cpi combin, 0x00                     ; Verifiy if its the first time 
-  brne ___skipFS1                      ; If it's not jump to the skipFirstTimeS1
+  brne ___skipFS2                      ; If it's not jump to the skipFirstTimeS1
   ori combin, 0b10000100               ; Update the presence of coming inside by the more significant bit, and say
   rjmp _loop
   
