@@ -25,12 +25,34 @@
 .def XL    = r26                       ; Defition of the X pointer low and high
 .def XH    = r27
 .def varAS = r17                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
+.def cont1 = r18                       ; This variable will be used to count until 6
+.def cont2 = r19                       ; This variable will be used to count until inside timers standart
+.def cont3 = r20                       ; This variable will be used to count until inside timers
+.def comV  = r21                       ; This variable will be used to compare things
+.def maxV  = r22                       ; This variable will be used to compare things
+
+.equ Reset = 0x0000                    ; Definition of the reset interruption 
+.equ Start = 0x0002                    ; Definition of the start interruption 
+.equ Stop  = 0x0008                    ; Definition of the stop  interruption
+.equ Tim0  = 0x001E                    ; Definition of the tim0  interruption
+.equ Code  = 0x0046                    ; Definition of where the code will start
+
+.equ stg2  = 10                        ; Special char for a certain moment in the program
 
 .cseg                                  ; Start the segment of code to the compiler
-.org 0x00                              ; Indicate if the code as an interrrupt with reset
+.org Reset                             ; Indicate if the code as an interrrupt with reset
   rjmp _setupCold                      ; Jump to the normal procedure
 
-.org 0x46                              ; Indicate if the sw6 was pressed as an interrupt, INT7
+.org Start                             ; Indicate if the start button was pressed
+  rjmp _startP                         ; Jump to the start procedure
+
+.org Stop                              ; Indicate if the stop  button was pressed
+  rjmp _stopP                          ; Jump to the stop procedure
+
+.org Tim0                              ; Indicate if the timer flag was triggered
+  rjmp _timP                           ; Jump to the timer procedure
+
+.org Code                              ; Where the code will start
   
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Inicializations and setup of the hardware
@@ -42,11 +64,26 @@ _setupCold:
   out DDRD, temp                       ; Update the value on RAM of DDRD, in this case make all inputs besides 6,7
   ldi temp, 0b11011110                 ; Load to register 16 the value to assign the pull up resistors and the display selection
   out PORTD, temp                      ; Update the value on RAM of PORTD, in this case pull up resistors
+  ; Update the EICRA register in RAM, and EIMSK
+  ldi temp, 0b11000011                 ; Load to register 16 the value of activate the interrupt of int3 and int0 at rising edge
+  sts EICRA, temp                      ; Update the value in RAM, should use the STS because ins't in the area covered by OUT
+  ldi temp, 0b00000001                 ; The interrupts that will start activated, we will just use start for now, but this register will be upd
+  out EIMSK, temp                      ; From the next intruction on we can recieve interrupts from the START, int0 
+
+  sei                                  ; Enable the interrupt flag from SREG
 
   ; Setup up PORTC <DISPLAY>
   ldi temp, 0xFF                       ; Load to register 16 the value to assign to the PORB
-  out DDRC, temp                       ; Update the value on RAM of DDRB, in this case make everything outputs
-      
+  out DDRC, temp                       ; Update the value on RAM of DDRB, in this case make everything outputs 
+
+  ; Setup up the TIMER
+  ldi temp, 156                        ; This OCR0 value was selected from the equation T = Prescalar/CLK * ( OCR0 + 1 )
+  out OCR0, temp                       ; Set the OCR0 to the value in temp, in this case for 10 ms, with a prescale of 1024
+  ldi temp, 0b00001111                 ; Load to register temp, CTC on, and prescale 1024
+  out TCCR0, temp                      ; Update the value in RAM of TCCR0 based in temp register
+  ldi temp, 0b00000010                 ; Load to register temp, OCIE0 Enable for CTC flag
+  out TIMSK, temp                      ; Update value in RAM
+          
 _setupWarm:
   ; Inicialization of stack pointer
   ldi temp, 0xFF                       ; Load to register 16 the last position of the stack pointer
@@ -55,8 +92,8 @@ _setupWarm:
   out sph, temp                        ; Update in RAM the value of the stack pointer high at the 0x10    
 
   ; Inicialization of RAM pointer ( x )
-  ldi XL, 0x10                         ; Load to register 16 the last position of the RAM pointer low
-  ldi XH, 0x01                         ; Load to register 16 the main position of the RAM pointer high
+  ldi XL, 0x10                         ; Load to register pointer X the last position of the RAM pointer low
+  ldi XH, 0x01                         ; Load to register pointer X the main position of the RAM pointer high
 
   ; Save the truth table of the display into RAM
   ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
@@ -88,7 +125,11 @@ _setupWarm:
   set                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored, in this case decrement
   call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
   out PORTC, temp                      ; Update value in RAM, update to 8
+  clt                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored
 
+  ; Other Events
+  ldi comV, 0                          ; This will be a variable use in the rest of the program
+  
   rjmp _main                           ; Jump the routine functions and go to main
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -118,53 +159,91 @@ __set:
 __memoryNreach:
   ld temp, X                           ; Load the number diagram into the r16
   ret                                  ; Return to the last position  
- 
+
+
+_timer:
+  cpi cont3, 0                         ; Check if 0 was reached 
+  brne _timer                          ; If zero wasn't reached goto timer, else jump to loop
+  mov cont3, cont2                     ; Move the value of the counter 2 too counter 3
+  ret 
+  
 ;-----------------------------------------------------------------------------------------------------------------------------------------
-; Routines without a return statment
+; Routines for Interrupts
 ;-----------------------------------------------------------------------------------------------------------------------------------------
+
+_startP:
+  ldi temp, 0b00001000                 ; Load to the register 16 the value for chanching the activated interrupts
+  out EIMSK, temp                      ; Enable the stop interrupt from the RAM   
+  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
+  out EIFR                             ; Flags of the interrupts
+
+  ori comV , 0b00000001                ; Add the last bit that means it should start
+  reti
+
+_stopP:
+  ldi temp, 0b00000001                 ; Load to the register 16 the value for chanching the activated interrupts
+  out EIMSK, temp                      ; Enable the start interrupt from the RAM   
+  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
+  out EIFR                             ; Flags of the interrupts        
+
+  ori comV , 0b10000000                ; Add the first bit that means it should stop
+  reti
+
+_timeP:
+  dec cont3
+  reti
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Main Code
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _main:
-  ; Check input
-  in temp, PIND                        ; Store in the register 16 the value stored in RAM, in the position pointed by PIND
-  cpi temp, 0xFE                       ; Check if the switch one was pressed, which means start the program ( dice )
-  brne _main                           ; If the user didn't pressed keep on the loop coming back to main, else continue  
+  cpi comV, 0b00000001                 ; Verify if the start button was pressed
+  brne _main                           ; If its not equal back to the main
+  clt                                  ; Clear T flag, so i can increment
 
-_pre:
-  clt                                  ; Clear the T flag which will mean we are going to increment values   
-  ldi varAS, 0                         ; This register will be used to store the supost position of our xpointer 
-  ; Reinicialization of RAM pointer ( x )
-  ldi XL, 0x10                         ; Load to register 16 the last position of the RAM pointer low
-  ldi XH, 0x01                         ; Load to register 16 the main position of the RAM pointer high
+_selec:
+  cpi comV, 0b00000001
+  breq _fStage 
+  cpi comV, 0b10000001
+  breq _sStage 
+  rjmp _main
 
+_fStage:
+  ldi cont1, 0                         ; Set the counter
+  ldi cont2, 2                         ; The counter for the timer
+  ldi maxV , 6                         ; Set the max value to reach in this stage
+  ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
+  ldi XL, 0x1A                         ; Reposition the lower address of the X pointer
+  rjmp _loop
+
+_sStage:
+  ldi cont1, 0                         ; Set the counter one with a special number
+  ldi cont2, 100                       ; The counter for the timer
+  ldi varAS, 0x00                      ; Load to register 17 the sum to the next position in RAM
+  ldi maxV , 5                         ; Set the max value to reach in this stage
+  ldi comV , 0                         ; Back to the beginning number
+  
 _loop:
-  cpi varAS, 6                         ; Verify if we reach 6, similar to >> for ( x = 0 ; x < 6 ; x++ )
-  breq _pre                            ; If it was reached comeback to the pre loop, and start from 1 again
-  
-  ; Go from one to six
-  inc varAS                            ; increment the register that contains the number on the display itself
-  call _loadMove                       ; Get the value of the code of display    
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
   out PORTC, temp                      ; Update value in RAM, update to 8
-  ; delay of 20 ms, maybe using tim0
-  
-  in temp, PIND                        ; Store in the register 16 the value stored in RAM, in the position pointed by PIND
-  cpi temp, 0xF7                       ; Check if the switch for was pressed, which means stop the program ( dice )
-  brne _loop                           ; If the user didn't pressed back to the loop, else continue
+  call _timer                          ; Execute a timer
+  ser temp                             ; Set every bit in register temporary
+  out PORTC, temp                      ; Update the value in RAM
+  call _timer                          ; Execute a timer
 
-  ; Start the timer for 5 sec, maybe using tim0 again
+  cp cont1, maxV                       ; Compare to check if limit was reached
+  breq _selec                          ; If zero flag is activated return to the first stage
+  inc cont1                            ; Increment the first counter 
 
-__loop:
-  ldi temp, 0xFF                       ; Load to register temporary the way shuting down  
-  out PORTC, temp                      ; Update value in RAM, update to 8
-  ; delay of 1 sec, maybe using tim1
-  call _loadMove                       ; Get the number again to the temporary register
-  out PORTC, temp                      ; Print over and over the same number 
-  rjmp __loop                          ; Return to the second loop
+  cpi comV, 0b10000001                 ; Check if the stop button was pressed
+  breq _sStage                         ; If its equal go to the second stage
+
+  cpi comV, 0b00000000                 ; Check if the after button was pressed
+  breq _main                           ; If its equal go to the main
+
+  rjmp _loop                        
   
-   
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; End File
 ;-----------------------------------------------------------------------------------------------------------------------------------------

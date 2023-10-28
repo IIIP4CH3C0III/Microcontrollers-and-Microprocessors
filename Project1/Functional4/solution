@@ -1,0 +1,72 @@
+_startP:
+  ldi temp, 0b00001000                 ; Load to the register 16 the value for chanching the activated interrupts
+  out EIMSK, temp                      ; Enable the stop interrupt from the RAM   
+  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
+  out EIFR                             ; Flags of the interrupts
+  
+  set                                  ; T flag used again, in this case to inform we can procede from the menu
+  reti
+
+
+_stopP:
+  ldi temp, 0b00000001                 ; Load to the register 16 the value for chanching the activated interrupts
+  out EIMSK, temp                      ; Enable the start interrupt from the RAM   
+  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
+  out EIFR                             ; Flags of the interrupts        
+  reti
+
+_timeP:
+  reti
+
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; Main Code
+;-----------------------------------------------------------------------------------------------------------------------------------------
+
+_main:
+  brtc _main                           ; Verifying the T flag
+  clt                                  ; T flag used to select the add number in loadMove
+  ldi cont, 0                          ; Load the value 0 again to the counter
+  ldi XL, 0x10                         ; Load to register low the first position of the numbers to the display  
+
+_loop:  
+  inc cont                             ; Increment to the counter
+  cpi cont, 7                          ; Verify if 7 was reached
+  brne __continue                      ; If 7 wans't reached jump to the normal loop, otherwise start counter from 0 again
+  ldi cont, 0                          ; Load the value 0 again to the counter
+  ldi XL, 0x10                         ; Load to register low the first position of the numbers to the display  
+  
+__continue:  
+  ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, temp                      ; Update value in RAM, update to 8
+
+__wait0:
+  cpi comV, 0                          ; Check if the flag of time was activated
+  breq __wait0                         ; Back to the wait0
+
+  ; Until time flag is activated ( 20 ms )
+
+  cpi cont, 10                         ; If the counter is at 10 means the stop button was pressed
+  brne _loop
+
+__wait1:
+
+  ldi varAS, 0x00                      ; Load to register 17 the sum to the next position in RAM
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, temp                      ; Update value in RAM, update to 8
+
+  ; Until timer flag activated
+
+  inc cont	                           ; Increment to counter
+  cpi cont, 15                         ; Verify if already waited 5 seconds
+  breq _main                           ; Cicle end back to the main
+
+__wait2:
+
+  ser temp                              ; Make everything 1 in the register temp
+  out PORTC, temp                       ; Shutdown LEDs  
+
+  ; Until timer flag activated
+
+  inc cont	                            ; Increment to counter
+  rjmp __wait1                          ; Repeat the cicle
