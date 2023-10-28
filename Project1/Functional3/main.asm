@@ -206,6 +206,11 @@ __addP:
   cpi numUsed, nMax                    ; Verify if the limit as being reached
   brge __cdoor                         ; Branch if numUsed >= nMax
   inc numUsed                          ; Increment a new person on the room
+
+___while1:
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xFF                        ; Check if the S2 is no longer activated
+  brne ___while1                       ; If it wasn't return to the main  
   
   sbi PORTA, PE                        ; Open the door in normal cases ( in this case leave it open )
   
@@ -221,6 +226,11 @@ __subP:
   brlt __clight                        ; The 0 as been reached 
   dec numUsed                          ; Decrement a person on the room
 
+___while2:
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xFF                        ; Check if the S1 is no longer activated
+  brne ___while2                       ; If it wasn't return to the main  
+
   cbi PORTA, LS                        ; Open the light in normal cases ( in this case leave it open )
     
   ; Print in the display
@@ -229,11 +239,6 @@ __subP:
   call _loadMove                       ; Load the new value to segment from the RAM
   out PORTC, r16                       ; R16 as the argument of segment from the RAM
 
-  ; Wait until S1 or S2 is no longer pressed
-___while:
-  in r16, PIND                         ; Read from the RAM the exact value of Inputs
-  cpi r16, 0xFF                        ; Check if the S1 or S2 is no longer activated
-  brne ___while                        ; If it wasn't return to the main  
   rjmp _main                           ; Return to the main
 
 __cdoor:
