@@ -50,7 +50,7 @@
   rjmp _stopP                          ; Jump to the stop procedure
 
 .org Tim0                              ; Indicate if the timer flag was triggered
-  rjmp _timP                           ; Jump to the timer procedure
+  rjmp _timeP                          ; Jump to the timer procedure
 
 .org Code                              ; Where the code will start
   
@@ -175,7 +175,7 @@ _startP:
   ldi temp, 0b00001000                 ; Load to the register 16 the value for chanching the activated interrupts
   out EIMSK, temp                      ; Enable the stop interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
-  out EIFR                             ; Flags of the interrupts
+  out EIFR, temp                       ; Flags of the interrupts
 
   ori comV , 0b00000001                ; Add the last bit that means it should start
   reti
@@ -184,7 +184,7 @@ _stopP:
   ldi temp, 0b00000001                 ; Load to the register 16 the value for chanching the activated interrupts
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
-  out EIFR                             ; Flags of the interrupts        
+  out EIFR, temp                       ; Flags of the interrupts        
 
   ori comV , 0b10000000                ; Add the first bit that means it should stop
   reti
@@ -203,11 +203,11 @@ _main:
   clt                                  ; Clear T flag, so i can increment
 
 _selec:
-  cpi comV, 0b00000001
-  breq _fStage 
-  cpi comV, 0b10000001
-  breq _sStage 
-  rjmp _main
+  cpi comV, 0b00000001                 ; Check if the procedure is still in the first stage
+  breq _fStage                         ; If it is go back to the first stage
+  cpi comV, 0b10000001                 ; Check if the procedure is in the second stage
+  breq _sStage                         ; If it is go to the second stage
+  rjmp _main                           ; If neither options are true return to the main
 
 _fStage:
   ldi cont1, 0                         ; Set the counter
