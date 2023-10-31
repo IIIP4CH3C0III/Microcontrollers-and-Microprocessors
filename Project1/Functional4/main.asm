@@ -121,7 +121,7 @@ _setupWarm:
   call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
   
   ; Warm display <Print 1>
-  ldi varAS, 8                         ; Subtract 8 to the RAM stack pointer, it should be in 1
+  ldi varAS, 9                         ; Subtract 8 to the RAM stack pointer, it should be in 1
   set                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored, in this case decrement
   call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
   out PORTC, temp                      ; Update value in RAM, update to 8
@@ -160,13 +160,6 @@ __memoryNreach:
   ld temp, X                           ; Load the number diagram into the r16
   ret                                  ; Return to the last position  
 
-
-_timer:
-  cpi cont3, 0                         ; Check if 0 was reached 
-  brne _timer                          ; If zero wasn't reached goto timer, else jump to loop
-  mov cont3, cont2                     ; Move the value of the counter 2 too counter 3
-  ret 
-  
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Routines for Interrupts
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -179,8 +172,9 @@ _startP:
 
   ldi cont2, 2                         ; The counter for the timer
   ldi maxV , 5                         ; Set the max value to reach in this stage
+  ldi comV , 0b00000001                ; Add the last bit that means it should start
+  mov cont3, cont2
 
-  ori comV , 0b00000001                ; Add the last bit that means it should start
   reti
 
 _stopP:
@@ -193,12 +187,18 @@ _stopP:
   ldi cont2, 100                       ; The counter for the timer
   ldi varAS, 0x00                      ; Load to register 17 the sum to the next position in RAM
   ldi maxV , 5                         ; Set the max value to reach in this stage
+  mov cont3, cont2
 
   ori comV , 0b10000000                ; Add the first bit that means it should stop
   reti
 
 _timeP:
   dec cont3
+  brne _endTimeP
+  mov cont3, cont2
+  sbr comV, 0b00010000
+
+_endTimeP:
   reti
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -227,22 +227,48 @@ _sStage:
   ldi comV , 0                         ; Back to the beginning number
   
 _loop:
+
   call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
   out PORTC, temp                      ; Update value in RAM, update to 8
-  call _timer                          ; Execute a timer
+
+_do:
+  cpi comV, 0b00010001
+  breq _while
+  cpi comV, 0b10010001
+  breq _while
+  cpi comV, 0b00010000
+  breq _while
+  rjmp _do
+_while:
+  cbr comV, 0b00010000  
+
   ser temp                             ; Set every bit in register temporary
   out PORTC, temp                      ; Update the value in RAM
-  call _timer                          ; Execute a timer
 
+_do2:
+  cpi comV, 0b00010001
+  breq _while2
+  cpi comV, 0b10010001
+  breq _while2
+  cpi comV, 0b00010000
+  breq _while2
+  rjmp _do2
+_while2:
+  cbr comV, 0b00010000  
+ 
   cp cont1, maxV                       ; Compare to check if limit was reached
   breq _selec                          ; If zero flag is activated return to the first stage
   inc cont1                            ; Increment the first counter 
 
   cpi comV, 0b00000000                 ; Check if the after button was pressed
-  breq _main                           ; If its equal go to the main
+  breq _end                            ; If its equal go to the main
 
   rjmp _loop                        
-  
+
+_end:
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, temp                      ; Update value in RAM, update to 8
+
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; End File
 ;-----------------------------------------------------------------------------------------------------------------------------------------
