@@ -167,6 +167,7 @@ _startP:
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts
 
+  ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
   ldi cont2, 2                         ; The counter for the timer
   ldi maxV , 10                        ; Set the max value to reach in this stage
   ldi comV , 0b00000001                ; Add the last bit that means it should start
