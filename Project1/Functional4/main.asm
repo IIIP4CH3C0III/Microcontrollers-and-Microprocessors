@@ -177,6 +177,9 @@ _startP:
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts
 
+  ldi cont2, 2                         ; The counter for the timer
+  ldi maxV , 5                         ; Set the max value to reach in this stage
+
   ori comV , 0b00000001                ; Add the last bit that means it should start
   reti
 
@@ -185,6 +188,11 @@ _stopP:
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
+
+  ldi cont1, 0                         ; Set the counter one with a special number
+  ldi cont2, 100                       ; The counter for the timer
+  ldi varAS, 0x00                      ; Load to register 17 the sum to the next position in RAM
+  ldi maxV , 5                         ; Set the max value to reach in this stage
 
   ori comV , 0b10000000                ; Add the first bit that means it should stop
   reti
@@ -211,17 +219,11 @@ _selec:
 
 _fStage:
   ldi cont1, 0                         ; Set the counter
-  ldi cont2, 2                         ; The counter for the timer
-  ldi maxV , 6                         ; Set the max value to reach in this stage
   ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
-  ldi XL, 0x01                         ; Reposition the lower address of the X pointer
+  ldi XL, 0x00                         ; Reposition the lower address of the X pointer
   rjmp _loop
 
 _sStage:
-  ldi cont1, 0                         ; Set the counter one with a special number
-  ldi cont2, 100                       ; The counter for the timer
-  ldi varAS, 0x00                      ; Load to register 17 the sum to the next position in RAM
-  ldi maxV , 5                         ; Set the max value to reach in this stage
   ldi comV , 0                         ; Back to the beginning number
   
 _loop:
@@ -235,9 +237,6 @@ _loop:
   cp cont1, maxV                       ; Compare to check if limit was reached
   breq _selec                          ; If zero flag is activated return to the first stage
   inc cont1                            ; Increment the first counter 
-
-  cpi comV, 0b10000001                 ; Check if the stop button was pressed
-  breq _sStage                         ; If its equal go to the second stage
 
   cpi comV, 0b00000000                 ; Check if the after button was pressed
   breq _main                           ; If its equal go to the main
