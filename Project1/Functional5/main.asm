@@ -30,8 +30,11 @@
 .def varA  = r17                       ; This variable will be used to set how much are we advancing on the stack pointer 
 .def varS  = r18                       ; This variable will be used to set how much are we returning on the stack pointer 
 .def stag  = r19                       ; This variable is for monitor select, start status, and some other things eventually
-.def RaPo  = r20
-.def FaPo  = r21
+.def RaPo  = r20                       ; This variable will be storing the position of display 1
+.def FaPo  = r21                       ; This variable will be storing the position of display 2
+.def delta = r22                       ; This variable will be storing the time since start was pressed until stop was pressed
+.def timS  = r23                       ; This variable will be storing the time desired
+.def timC  = r24                       ; This variable will be storing the time that will be decremented
 
 .def XL    = r26                       ; Defition of the X pointer low and high
 .def XH    = r27
@@ -44,8 +47,8 @@
 .equ Tim0  = 0x001E                    ; Definition of the tim0  interruption
 .equ Code  = 0x0046                    ; Definition of where the code will start
 
-.equ wd1  = 0b11011110                 
-.equ wd2  = 0b10011110
+.equ wd1  = 0b11011110                 ; Word for the display 1 
+.equ wd2  = 0b10011110                 ; Word for the display 2 
 
 .cseg                                  ; Start the segment of code to the compiler
 .org Reset                             ; Indicate if the code as an interrrupt with reset
@@ -76,7 +79,7 @@ _setupCold:
   ; Setup up PORTD <Buttons + Dis.Control>
   ldi temp, 0b11000000                 ; Load to register 16 the value to assign to the PORTD
   out DDRD, temp                       ; Update the value on RAM of DDRD, in this case make all inputs besides 6,7
-  ldi temp, 0b11011110                 ; Load to register 16 the value to assign the pull up resistors and the display selection
+  ldi temp, wd1                        ; Load to register 16 the value to assign the pull up resistors and the display selection
   out PORTD, temp                      ; Update the value on RAM of PORTD, in this case pull up resistors
   ; Update the EICRA register in RAM, and EIMSK
   ldi temp, 0b11000011                 ; Load to register 16 the value of activate the interrupt of int3 and int0 at rising edge
@@ -186,6 +189,9 @@ _startP:
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts
 
+  sbr stag, 0b00000100                 ; Set the bit of start in the stag word
+  ldi timS, 10                         ; Start with 10 Hz 
+  
   reti
 
 _stopP:
@@ -193,6 +199,8 @@ _stopP:
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
+
+  sbr stag, 0b00000001                 ; Set the bit of stop in the stag word
 
   reti
 
@@ -223,12 +231,47 @@ _timeP:
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _main:
-  ldi RaPo, 0x00
-  ldi FaPo, 0x07
-  ldi 
-  Enable SW1 hardware interrupt
-  Stag set at 0000 0000
-  deltaT set 0 
+  ldi RaPo, 0x00                       ; Load to the register RaPo the position to start raising
+  ldi FaPo, 0x07                       ; Load to the register FaPo the position to start falling
+  ldi stag, 0x00                       ; Load the stag all to 0s so display 1 is "selected" and its in no stage, neither started have been pressed
+  ldi delta, 0                         ; Load to the reference delta time at 0
+  
+  ldi temp, 0b00000001                 ; Set to the register temp the bit for chanching the activated interrupts
+  out EIMSK, temp                      ; Enable the stop interrupt from the RAM   
+  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
+  out EIFR, temp                       ; Flags of the interrupts        
+
+_loop:
+  cpi stag, 0b00000100                 ; Compare to the first possibility, first stage
+  breq _fStage                         ; if it is go the first stage
+  cpi stag, 0b00000101                 ; Compare to the second possibility, second stage
+  breq _sStage                         ; if it is go the second stage
+  cpi stag, 0b00000110                 ; Compare to the third possibility, third stage
+  breq _tStage                         ; if it is go the third stage
+  rjmp _loop                           ; Otherwise back to the loop
+
+_fStage:
+  mov timC, timS                       ; Insert value of the time desigred to the time counter
+  ldi varA, 1                          ; Load to the add Value argument a 1 
+  ldi varS, 1                          ; Load to the subtract Value argument a 1
+  rjmp _if_DiSe
+  
+_sStage:
+  ldi timS, 100                        ; Load to the timer 1 second
+  mov timC, timS                       ; Move the value from timS to timC
+  ldi varA , 0                         ; Load to the add Value argument a 0 
+  ; ldi contS, delta/2 
+  rjmp _if_DiSe
+  
+_tStage:
+  ldi timC, 100                        ; Load to the timer 1 second
+  ldi varS , 0                         ; Load to the subtract Value argument a 0 
+  ; ldi contS, 5                         ; Load to the counter a 5 
+  rjmp _if_DiSe
+
+_if_DiSe:
+     
+
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; End File
 ;-----------------------------------------------------------------------------------------------------------------------------------------

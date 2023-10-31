@@ -92,7 +92,7 @@ _setupWarm:
   out sph, temp                        ; Update in RAM the value of the stack pointer high at the 0x10    
 
   ; Inicialization of RAM pointer ( x )
-  ldi XL, 0x10                         ; Load to register pointer X the last position of the RAM pointer low
+  ldi XL, 0x00                         ; Load to register pointer X the last position of the RAM pointer low
   ldi XH, 0x01                         ; Load to register pointer X the main position of the RAM pointer high
 
   ; Save the truth table of the display into RAM
@@ -214,7 +214,7 @@ _fStage:
   ldi cont2, 2                         ; The counter for the timer
   ldi maxV , 6                         ; Set the max value to reach in this stage
   ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
-  ldi XL, 0x1A                         ; Reposition the lower address of the X pointer
+  ldi XL, 0x01                         ; Reposition the lower address of the X pointer
   rjmp _loop
 
 _sStage:

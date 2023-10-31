@@ -219,7 +219,7 @@ ___while1:
   set                                  ; Set the T flag to use the decrement as argument for the load_move
   call _loadMove                       ; Load the new value to segment from the RAM
   out PORTC, r16                       ; R16 as the argument of segment from the RAM
-  rjmp ___while                        ; Verify if the person already passed in the sensoro or if it is still there
+  rjmp _main                           ; Verify if the person already passed in the sensoro or if it is still there
 
 __subP:
   cpi numUsed, 1                       ; Verify if the limit as being reached
