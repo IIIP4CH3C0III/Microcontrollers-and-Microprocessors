@@ -182,9 +182,9 @@ _stopP:
   out EIFR, temp                       ; Flags of the interrupts        
 
   ldi cont1, 0                         ; Set the counter one with a special number
-  ldi cont2, 100                       ; The counter for the timer
+  ldi cont2, 50                        ; The counter for the timer
   ldi varAS, 0x00                      ; Load to register 17 the sum to the next position in RAM
-  ldi maxV , 10                        ; Set the max value to reach in this stage
+  ldi maxV , 8                         ; Set the max value to reach in this stage
   mov cont3, cont2
 
   sbr comV , 0b00000010                ; Add the first bit that means it should stop
@@ -222,6 +222,9 @@ _fStage:
 
 _sStage:
   ldi comV , 0                         ; Back to the beginning number
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, temp                      ; Update value in RAM, update to 8
+  rjmp _main
   
 _loop:
   sbrs comV, 4                         ; Verify if the bit of timer is set 
@@ -247,15 +250,8 @@ _skip:
   breq _selec                          ; If zero flag is activated return to the first stage
   inc cont1                            ; Increment the first counter 
 
-  cpi comV, 0b00000000                 ; Check if the after button was pressed
-  breq _end                            ; If its equal go to the main
-
   rjmp _loop                        
 
-_end:
-  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
-  out PORTC, temp                      ; Update value in RAM, update to 8
-  rjmp _main
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; End File
 ;-----------------------------------------------------------------------------------------------------------------------------------------
