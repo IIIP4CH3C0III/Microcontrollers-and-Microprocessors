@@ -168,7 +168,7 @@ _startP:
   out EIFR, temp                       ; Flags of the interrupts
 
   ldi cont2, 2                         ; The counter for the timer
-  ldi maxV , 5                         ; Set the max value to reach in this stage
+  ldi maxV , 10                        ; Set the max value to reach in this stage
   ldi comV , 0b00000001                ; Add the last bit that means it should start
   mov cont3, cont2
 
@@ -183,7 +183,7 @@ _stopP:
   ldi cont1, 0                         ; Set the counter one with a special number
   ldi cont2, 100                       ; The counter for the timer
   ldi varAS, 0x00                      ; Load to register 17 the sum to the next position in RAM
-  ldi maxV , 5                         ; Set the max value to reach in this stage
+  ldi maxV , 10                        ; Set the max value to reach in this stage
   mov cont3, cont2
 
   sbr comV , 0b00000010                ; Add the first bit that means it should stop
