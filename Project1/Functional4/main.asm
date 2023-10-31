@@ -92,8 +92,8 @@ _setupWarm:
   out sph, temp                        ; Update in RAM the value of the stack pointer high at the 0x10    
 
   ; Inicialization of RAM pointer ( x )
-  ldi XL, 0x00                         ; Load to register pointer X the last position of the RAM pointer low
   ldi XH, 0x01                         ; Load to register pointer X the main position of the RAM pointer high
+  ldi XL, 0x00                         ; Load to register pointer X the last position of the RAM pointer low
 
   ; Save the truth table of the display into RAM
   ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
@@ -189,15 +189,15 @@ _stopP:
   ldi maxV , 5                         ; Set the max value to reach in this stage
   mov cont3, cont2
 
-  ori comV , 0b10000000                ; Add the first bit that means it should stop
+  ori comV , 0b00000010                ; Add the first bit that means it should stop
   reti
+
 
 _timeP:
   dec cont3
   brne _endTimeP
   mov cont3, cont2
   sbr comV, 0b00010000
-
 _endTimeP:
   reti
 
@@ -213,13 +213,12 @@ _main:
 _selec:
   cpi comV, 0b00000001                 ; Check if the procedure is still in the first stage
   breq _fStage                         ; If it is go back to the first stage
-  cpi comV, 0b10000001                 ; Check if the procedure is in the second stage
+  cpi comV, 0b00000011                 ; Check if the procedure is in the second stage
   breq _sStage                         ; If it is go to the second stage
   rjmp _main                           ; If neither options are true return to the main
 
 _fStage:
   ldi cont1, 0                         ; Set the counter
-  ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
   ldi XL, 0x00                         ; Reposition the lower address of the X pointer
   rjmp _loop
 
@@ -227,47 +226,33 @@ _sStage:
   ldi comV , 0                         ; Back to the beginning number
   
 _loop:
+  sbrs comV, 4                         ; Verify if the bit of timer is set 
+  rjmp _loop
+  
+_continue:  
+  cbr comV, 0b00010000                 ; Clear the bit of the timer 
+
+  in PINC, temp                        ; Get the value from the RAM of PINC
+  cpi temp, 0xFF                       ; Verify if everthing is at 1s
+  brne _off                            ; if it is true show the next number
 
   call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
   out PORTC, temp                      ; Update value in RAM, update to 8
+  rjmp _skip
 
-_do:
-  cpi comV, 0b00010001
-  breq _while
-  cpi comV, 0b10010001
-  breq _while
-  cpi comV, 0b00010000
-  breq _while
-  rjmp _do
-_while:
-  cbr comV, 0b00010000  
-
+_off:                                  ; Else turn everthing off
   ser temp                             ; Set every bit in register temporary
   out PORTC, temp                      ; Update the value in RAM
 
-_do2:
-  cpi comV, 0b00010001
-  breq _while2
-  cpi comV, 0b10010001
-  breq _while2
-  cpi comV, 0b00010000
-  breq _while2
-  rjmp _do2
-_while2:
-  cbr comV, 0b00010000  
- 
+_skip: 
   cp cont1, maxV                       ; Compare to check if limit was reached
   breq _selec                          ; If zero flag is activated return to the first stage
   inc cont1                            ; Increment the first counter 
 
   cpi comV, 0b00000000                 ; Check if the after button was pressed
-  breq _end                            ; If its equal go to the main
+  breq _main                           ; If its equal go to the main
 
   rjmp _loop                        
-
-_end:
-  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
-  out PORTC, temp                      ; Update value in RAM, update to 8
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; End File
