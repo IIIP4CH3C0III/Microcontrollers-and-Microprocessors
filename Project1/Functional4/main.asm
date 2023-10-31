@@ -192,12 +192,12 @@ _stopP:
 
 
 _timeP:
-  dec cont3
-  brne _endTimeP
-  mov cont3, cont2
-  sbr comV, 0b00010000
+  dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
+  brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
+  mov cont3, cont2                     ; Move the value of the counter 2 to the counter 3, reseting the value to decrement
+  sbr comV, 0b00010000                 ; Set the bit in comV word, saying the time has passed
 _endTimeP:
-  reti
+  reti                                 ; Return enabling the the interrupts flag from sreg
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Main Code

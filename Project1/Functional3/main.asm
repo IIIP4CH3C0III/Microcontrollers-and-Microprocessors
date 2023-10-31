@@ -43,10 +43,10 @@
 .include <m128def.inc>                 ; Indicate that we are working with atmega128
 
 .cseg                                  ; Start the segment of code to the compiler
-.org 0x00                              ; Indicate if the code as an interrrupt with reset
+.org 0x0000                            ; Indicate if the code as an interrrupt with reset
   rjmp _setupCold                      ; Jump to the normal procedure
 
-.org 0x46                              ; Indicate if the sw6 was pressed as an interrupt, INT7
+.org 0x0046                            ; Indicate if the sw6 was pressed as an interrupt, INT7
   rjmp _setupWarm                      ; Only need to restart the stack
 
 .equ Xcounter = 241                    ; Defition of the constant X of delay    
