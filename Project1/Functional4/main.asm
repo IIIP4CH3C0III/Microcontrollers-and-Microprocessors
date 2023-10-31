@@ -121,11 +121,8 @@ _setupWarm:
   call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
   
   ; Warm display <Print 1>
-  ldi varAS, 9                         ; Subtract 8 to the RAM stack pointer, it should be in 1
-  set                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored, in this case decrement
-  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  ser temp                             ; Load everthing to 1s
   out PORTC, temp                      ; Update value in RAM, update to 8
-  clt                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored
 
   ; Other Events
   ldi comV, 0                          ; This will be a variable use in the rest of the program
@@ -206,7 +203,7 @@ _endTimeP:
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _main:
-  cpi comV, 0b00000001                 ; Verify if the start button was pressed
+  sbrs comV, 0                         ; Verify if the start button was pressed
   brne _main                           ; If its not equal back to the main
   clt                                  ; Clear T flag, so i can increment
 
@@ -232,7 +229,7 @@ _loop:
 _continue:  
   cbr comV, 0b00010000                 ; Clear the bit of the timer 
 
-  in PINC, temp                        ; Get the value from the RAM of PINC
+  in temp, PINC                        ; Get the value from the RAM of PINC
   cpi temp, 0xFF                       ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
@@ -250,10 +247,14 @@ _skip:
   inc cont1                            ; Increment the first counter 
 
   cpi comV, 0b00000000                 ; Check if the after button was pressed
-  breq _main                           ; If its equal go to the main
+  breq _end                            ; If its equal go to the main
 
   rjmp _loop                        
 
+_end:
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, temp                      ; Update value in RAM, update to 8
+  rjmp _main
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; End File
 ;-----------------------------------------------------------------------------------------------------------------------------------------
