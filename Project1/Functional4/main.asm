@@ -186,7 +186,7 @@ _stopP:
   ldi maxV , 5                         ; Set the max value to reach in this stage
   mov cont3, cont2
 
-  ori comV , 0b00000010                ; Add the first bit that means it should stop
+  sbr comV , 0b00000010                ; Add the first bit that means it should stop
   reti
 
 
