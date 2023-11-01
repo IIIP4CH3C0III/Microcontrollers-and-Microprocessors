@@ -1,0 +1,298 @@
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; 
+; File    : main.asm 
+; 
+; Created : 15-10-2023
+; Author  : Fábio Pacheco, Joana Sousa
+;
+; Descrip : 
+;          Simulate the access control system of a room with maximum lotation of 9
+;          people. The entrance and exit of people is made using the same location and
+;          the passage of people is detected by sensors S1 and S2. Every time the
+;          lotation reaches the maximum value, the door PE (D8) must be closed to
+;          prevent more people coming in. The display on the right must show the
+;          number of vacant places in the room. The room light LS (D7) must be
+;          turned OFF everytime the room is empty.
+;
+; Details :
+;          The sensors S1 and S2 are placed with a phase shift of 90º to allow the
+;          detection of people entering and leaving. At the entrance, people are detected
+;          by the sensor S1, first, followed by sensor S2, while at the exit, first the sensor
+;          S2 is activated, followed by sensor S1.
+;
+;          To determine the value of sensors S1 and S2, for each sensor, two readings
+;          must be made, with a time interval of 1 ms, and both readings need to give
+;          the same logical value for the reading to be considered valid
+;
+; Design  : 
+;  Inputs : 
+;         S1,S2 will be connected to PORTD, pin 0 and 5
+;         7SEGDisplay controll will be connected to PORTD, pin 6 and 7 <MUX> 
+;  Outputs: 
+;         D7, D8 will be connected to PORTA, pin 6 and 7
+;         7SEGDisplay will be connected to PORTC to pins 0 to 7
+;  Timers :
+;         1 ms delay 
+;
+;-----------------------------------------------------------------------------------------------------------------------------------------
+
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; Instruction to the compiler
+;-----------------------------------------------------------------------------------------------------------------------------------------
+
+.include <m128def.inc>                 ; Indicate that we are working with atmega128
+
+.equ Xcounter = 241                    ; Defition of the constant X of delay    
+.equ Ycounter = 22                     ; Defition of the constant Y of delay
+.equ Zcounter = 1                      ; Defition of the constant Z of delay
+.equ PE       = 7                      ; Definition of the bit 7 designed to door
+.equ LS       = 6                      ; Definition of the bit 6 designed the lamp
+.equ nMax     = 9                      ; Definition of the number of max people inside the room
+
+.def XL       = r26                    ; Defition of the X pointer low and high
+.def XH       = r27
+.def argTimer = r19                    ; Definition of the timer argument
+.def numUsed  = r20                    ; Definition of the number of people in the room
+.def combin   = r18                    ; Definition of a byte to perform some combinations 
+
+.cseg                                  ; Start the segment of code to the compiler
+.org 0x0000                            ; Indicate if the code as an interrrupt with reset
+  rjmp _setupCold                      ; Jump to the normal procedure
+
+.org 0x0046                            ; Indicate if the sw6 was pressed as an interrupt, INT7
+
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; Inicializations and setup of the hardware
+;-----------------------------------------------------------------------------------------------------------------------------------------
+
+_setupCold:
+  ; Setup up PORTD <SENSORS + Dis.Control>
+  ldi r16, 0b11000000                  ; Load to register 16 the value to assign to the PORTD
+  out DDRD, r16                        ; Update the value on RAM of DDRD, in this case make all inputs besides 6,7
+  ldi r16, 0b11011110                  ; Load to register 16 the value to assign the pull up resistors and the display selection
+  out PORTD, r16                       ; Update the value on RAM of PORTD, in this case pull up resistors
+
+  ; Setup up PORTA <LEDS>
+  ldi r16, 0b11000000                  ; Load to register 16 the value to assign to the PORTC
+  out DDRA, r16                        ; Update the value on RAM of DDRC, in this case make bit 0 and 7 outputs
+
+  ; Setup up PORTC <DISPLAY>
+  ldi r16, 0xFF                        ; Load to register 16 the value to assign to the PORB
+  out DDRC, r16                        ; Update the value on RAM of DDRB, in this case make everything outputs
+      
+_setupWarm:
+  ; Inicialization of stack pointer
+  ldi r16, 0xFF                        ; Load to register 16 the last position of the stack pointer
+  out spl, r16                         ; Update in RAM the value of the stack pointer low at the 0xFF
+  ldi r17, 0x10                        ; Load to register 17 the last position of the stack pointer
+  out sph, r17                         ; Update in RAM the value of the stack pointer high at the 0x10    
+
+  ; Inicialization of RAM pointer ( x )
+  ldi XL, 0x00                         ; Load to register 16 the last position of the RAM pointer low
+  ldi XH, 0x01                         ; Load to register 16 the main position of the RAM pointer high
+
+  ; Save the truth table of the display into RAM
+  ldi r17, 0x01                        ; Load to register 17 the sum to the next position in RAM
+  clt                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored
+
+  ldi r16, 0xC0                        ; Load to register 16 the representation in the display of number 0 
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0xF9                        ; Load to register 16 the representation in the display of number 1
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0xA4                        ; Load to register 16 the representation in the display of number 2
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0xB0                        ; Load to register 16 the representation in the display of number 3  
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0x99                        ; Load to register 16 the representation in the display of number 4
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0x92                        ; Load to register 16 the representation in the display of number 5
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0x82                        ; Load to register 16 the representation in the display of number 6  
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0xF8                        ; Load to register 16 the representation in the display of number 7
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0x80                        ; Load to register 16 the representation in the display of number 8
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  ldi r16, 0x90                        ; Load to register 16 the representation in the display of number 9
+  call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
+  
+  ; Some other events
+  out PORTA, r16                       ; Make every output in PORTC turn off
+  ldi argTimer, 0x01                   ; Load to register 19 the value of times that will be repeated the delay of 1 ms
+  ldi numUsed, 0x00                    ; Load to register 19 the number of people inside of the room
+
+  ; Warm display <Print 9>
+  ldi r17, 9                           ; Sum 9 to the RAM stack pointer
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, r16                       ; Update value in RAM, update to 9
+
+  rjmp _main                           ; Jump the routine functions and go to main
+
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; Timer
+;-----------------------------------------------------------------------------------------------------------------------------------------
+
+_delay:
+  push r18                             ; Store the value from the r18 in the stack 
+  push r19                             ; Store the value from the r19 in the stack
+  push r20                             ; Store the value from the r20 in the stack
+  ldi r20, Zcounter                    ; Load to register 20 the value of Z
+__loopZ:                               
+  ldi r19, Ycounter                    ; Load to register 19 the value of Y
+__loopY:
+  ldi r18, Xcounter                    ; Load to register 18 the value of X
+__loopX:
+  dec r18                              ; Decrement the value of X
+  brne __loopX                         ; Back to X loop
+  dec r19                              ; Decrement the value of Y
+  brne __loopY                         ; Back to Y loop
+  dec r20                              ; Decrement the value of Z
+  brne __loopZ                         ; Back to Z loop        
+  ; Remember the LIFO tipology
+  pop r20                              ; Get the value from the past r20 from the stack
+  pop r19                              ; Get the value from the past r19 from the stack
+  pop r18                              ; Get the value from the past r18 from the stack
+  ret                                  ; Return to the place lefted before
+
+_timer:                                ; Argument is register 19 
+  call _delay                          ; Execute the delay of 100 ms
+  dec argTimer                         ; Decrement the value stored in the register 19
+  brne _timer                          ; If the zero wasn't reached back to the loop 
+  ret                                  ; Return to the place lefted before     
+
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; Routines
+;-----------------------------------------------------------------------------------------------------------------------------------------
+
+_storeMove: ; Arguments r16 as the value to Store and r17 as the add value
+  st X, r16                            ; Store into the RAM the value in r16
+  brtc __clr                           ; If T flag cleared go to add
+  rjmp __set                           ; else decrement
+
+_loadMove:  ; Arguments r16 as the register that recives the value and r17 as the add value
+  brtc __clr                           ; If T flag cleared go to add
+  rjmp __set                           ; else decrement
+
+__clr:
+  add XL, r17                          ; Move the pointer in the low position depending on the argument of register 17 ( + )
+  brcc __memoryNreach                  ; If this is false means the XL reached FF and we have to increment another position in the XH
+  inc XH                               ; Increment a value in the position of more important value of the pointer X
+  rjmp __memoryNreach                  ; Goto the end of the routine
+
+__set:
+  sub XL, r17                          ; Move the pointer in the low position depending on the argument of register 17 ( - )
+  brne  __memoryNreach                 ; If it didn't reach the 0 return, otherwise decrement a value of the high pointer
+  dec XH                               ; Decrement the high pointer in this case XH 
+
+__memoryNreach:
+  ld r16, X                            ; Load the number diagram into the r16
+  ret                                  ; Return to the last position  
+ 
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; Routines without a return statment
+;-----------------------------------------------------------------------------------------------------------------------------------------
+   
+__addP:
+  cpi numUsed, nMax                    ; Verify if the limit as being reached
+  brge __cdoor                         ; Branch if numUsed >= nMax
+  inc numUsed                          ; Increment a new person on the room
+
+___while1:
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xFF                        ; Check if the S2 is no longer activated
+  brne ___while1                       ; If it wasn't return to the main  
+  
+  sbi PORTA, PE                        ; Open the door in normal cases ( in this case leave it open )
+  
+  ; Print in the display
+  ldi r17, 0x01                        ; Move the value inside the number of open spaces to the argument 17
+  set                                  ; Set the T flag to use the decrement as argument for the load_move
+  call _loadMove                       ; Load the new value to segment from the RAM
+  out PORTC, r16                       ; R16 as the argument of segment from the RAM
+  rjmp _main                           ; Verify if the person already passed in the sensoro or if it is still there
+
+__subP:
+  cpi numUsed, 1                       ; Verify if the limit as being reached
+  brlt __clight                        ; The 0 as been reached 
+  dec numUsed                          ; Decrement a person on the room
+
+___while2:
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xFF                        ; Check if the S1 is no longer activated
+  brne ___while2                       ; If it wasn't return to the main  
+
+  cbi PORTA, LS                        ; Open the light in normal cases ( in this case leave it open )
+    
+  ; Print in the display
+  ldi r17, 0x01                        ; Move the value inside the number of open spaces to the argument 17
+  clt                                  ; Set the T flag to use the decrement as argument for the load_move
+  call _loadMove                       ; Load the new value to segment from the RAM
+  out PORTC, r16                       ; R16 as the argument of segment from the RAM
+
+  rjmp _main                           ; Return to the main
+
+__cdoor:
+  cbi PORTA, PE                        ; Clear the bit from PORTA in the RAM
+  rjmp _main                           ; Return to the main
+
+__clight:
+  sbi PORTA, LS                        ; Set the bit from PORTA in the RAM
+  rjmp _main                           ; Return to the main
+
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; Main Code
+;-----------------------------------------------------------------------------------------------------------------------------------------
+
+_main:
+  ldi combin, 0x00                     ; Load to the register named by combination, the combination that will set how this will work          
+ 
+_loop:
+  ; Update output
+  cpi combin, 0b00001110               ; Means the person came from S1-S2
+  breq __addP                          ; Add a person to the room
+  cpi combin, 0b10001110               ; Means the person came from S2-S1 
+  breq __subP                          ; Subtract a person to the room
+
+  ; Check input
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs 
+  cpi r16, 0xDE                        ; Check if both of the sensors are being pressed
+  brne __S1                            ; Don't leave here until both sensors are at 0
+  call _timer                          ; Execute a delay
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs 
+  cpi r16, 0xDE                        ; Check if both of the sensors are being pressed
+  brne __S1                            ; Don't leave here until both sensors are at 0
+  ; If it arrives here means S1 and S2 got read
+  ori combin, 0b00001000               ; Update the presence of coming inside by the more significant bit, and say
+
+__S1:  
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xFE                        ; Check if the S1 is activated
+  brne __S2                            ; If it wasn't return to the main  
+  call _timer                          ; Execute a delay
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xFE                        ; Check if the S1 is activated
+  brne __S2                            ; If it wasn't return to the main  
+  ; If it arrives here means S1 was read, need to check if its the first time coming trough S1
+  ori combin, 0b00000010               ; Update the presence of coming inside by the more significant bit, and say
+
+__S2:  
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xDF                        ; Check if the S2 is activated
+  brne _loop                           ; If it wasn't return to the main  
+  call _timer                          ; Execute a delay
+  in r16, PIND                         ; Read from the RAM the exact value of Inputs
+  cpi r16, 0xDF                        ; Check if the S2 is activated
+  brne _loop                           ; If it wasn't return to the main  
+  ; If it arrives here means S2 was read, need to check if its the first time coming trough S2
+  cpi combin, 0x00                     ; Verifiy if its the first time 
+  brne ___skipFS2                      ; If it's not jump to the skipFirstTimeS1
+  ori combin, 0b10000100               ; Update the presence of coming inside by the more significant bit, and say
+  rjmp _loop
+  
+___skipFS2:
+  ori combin, 0b00000100               ; Update the combination saying the sensor one got read
+  rjmp _loop                           ; Back to the loop    
+   
+;-----------------------------------------------------------------------------------------------------------------------------------------
+; End File
+;-----------------------------------------------------------------------------------------------------------------------------------------
