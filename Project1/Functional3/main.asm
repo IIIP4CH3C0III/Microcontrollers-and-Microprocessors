@@ -30,7 +30,6 @@
 .def comV  = r19                       ; Definition of the register that will store the argument timer
 
 .equ Reset = 0x0000                    ; Definition of the reset interruption 
-.equ Tim0  = 0x001E                    ; Definition of the tim0  interruption
 .equ Code  = 0x0046                    ; Definition of where the code will start
 
 .equ PE    = 7                         ; Definition of the pin D8 for the door
@@ -39,9 +38,6 @@
 .cseg                                  ; Start the segment of code to the compiler
 .org Reset                             ; Indicate if the code as an interrrupt with reset
   rjmp _setupCold                      ; Jump to the normal procedure
-
-.org Tim0                              ; Indicate if the timer flag was triggered
-  rjmp _tim0                           ; Jump to the timer procedure
 
 .org Code                              ; Where the code will start
   
@@ -59,7 +55,9 @@ _setupCold:
   ; Setup up PORTA <LEDS>
   ldi temp, 0b11000000                 ; Load to register 16 the value to assign to the PORTC
   out DDRA, temp                       ; Update the value on RAM of DDRC, in this case make bit 0 and 7 outputs
-
+  ser temp                             ; Load to register temporary all in 1s
+  out PORTA, temp                      ; Turn everthing off
+  
   ; Setup up PORTC <DISPLAY>
   ldi temp, 0xFF                       ; Load to register 16 the value to assign to the PORB
   out DDRC, temp                       ; Update the value on RAM of DDRB, in this case make everything outputs 
@@ -101,6 +99,8 @@ _setupWarm:
   call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
   
   ; Warm display <Print 9>
+  ldi XL, 0x08                         ; Load to register pointer X the last position of the RAM pointer low
+  call _loadMove                       ; Get the value 
   out PORTC, temp                      ; Update value in RAM, update to 8
 
   ; Other Events
@@ -157,11 +157,15 @@ __1:
   cpi temp, 0b11011110                 ; Check if S1 and S2 are pressed  
   brne __1                             ; While the two sensors are passed
 
-_S1:
+_S2:
   in temp, PIND                        ; Read from the RAM the exact value of Inputs
-  cpi temp, 0b11111110                 ; Check if S1 is pressed  
-  brne _S1
-
+  cpi temp, 0b11011111                 ; Check if S2 is pressed  
+  brne _S2
+_off1:
+  in temp, PIND                        ; Read from the RAM the exact value of Inputs
+  cpi temp, 0b11111111                 ; Check if nothing is pressed  
+  brne _off1
+  
   cpi cont1, 0                         ; Verify if 0 was reached
   breq __c1                            ; If 0 was reached jump to __c1
   dec cont1                            ; Decrement a slot in the room
@@ -183,10 +187,14 @@ __2:
   cpi temp, 0b11011110                 ; Check if S1 and S2 are pressed  
   brne __2                             ; While the two sensors are passed
 
-_S2:
+_S1:
   in temp, PIND                        ; Read from the RAM the exact value of Inputs
-  cpi temp, 0b11011111                 ; Check if S2 is pressed  
-  brne _S2
+  cpi temp, 0b11111110                 ; Check if S1 is pressed  
+  brne _S1
+_off2:
+  in temp, PIND                        ; Read from the RAM the exact value of Inputs
+  cpi temp, 0b11111111                 ; Check if nothing is pressed  
+  brne _off2
 
   cpi cont1, 10                        ; Verify if 10 was reached
   breq __c2                            ; If 0 was reached jump to __c1
