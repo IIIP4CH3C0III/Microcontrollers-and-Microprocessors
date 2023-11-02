@@ -173,6 +173,7 @@ _off1:
   ; Display 
   set                                  ; Subtracte the values inside the RAM pointer, the subtract argument varAS
   ldi varAS, 1                         ; The argument to the LoadMove
+  mov XL, cont1                        ; Move the value on the counter to pointer position
   call _loadMove                       ; Load the value from RAM and store in the temporary register
   out PORTC, temp                      ; Print the value on the display
   ; EndDisplay
@@ -204,6 +205,7 @@ _off2:
   ; Display 
   clt                                  ; Add the values inside the RAM pointer, the add argument varAS
   ldi varAS, 1                         ; The argument to the LoadMove
+  mov XL, cont1                        ; Move the value on the counter to pointer position
   call _loadMove                       ; Load the value from RAM and store in the temporary register
   out PORTC, temp                      ; Print the value on the display
   ; EndDisplay
