@@ -294,10 +294,13 @@ _endTime0:
 
 _main:
   sbrs comV, 0                         ; Verify if the start button was pressed
+  ldi RaPo, 0                          ; Set the counter
+  ldi FaPo, 7                          ; Set the counter
   brne _main                           ; If its not equal back to the main
   
 _fStage:
   ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0
+  
   rjmp _loop
 
 _sStage:
