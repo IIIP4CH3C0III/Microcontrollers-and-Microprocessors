@@ -153,8 +153,6 @@ _setupWarm:
    
   ; Other Events
   ldi comV, 0                          ; This will be a variable use in the rest of the program, this bit will be the flag bit like sreg
-  ldi contD, 10                        ; Start the frequency at 10 Hz
-  mov cont3, contD                     ; The value that will actually be decremented from the timer
   
   ldi temp, 200                        ; Implement for 2 second
   mov cont2, temp                      ; Move the value from above to the cont2
@@ -204,6 +202,8 @@ _startP:
   ldi comV , 0b00000001                ; Add the last bit that means it should start 
   ldi RaPo, 0                          ; Set the counter
   ldi FaPo, 7                          ; Set the counter
+  ldi contD, 10                        ; Start the frequency at 10 Hz
+  mov cont3, contD                     ; The value that will actually be decremented from the timer
 
   ldi temp, 0                          ; Is needed because its r15
   mov delta, temp                      ; Start the delta timer
@@ -290,15 +290,18 @@ _sStage:
   rjmp _loop
 
 _tStage: 
-  ldi comV , 0                         ; Back to the beginning number
-
   ldi temp, 0b00000001                 ; Disable everything, besides the start button
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
+  ldi comV , 0                         ; Back to the beginning number
+  ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0  
   ldi temp, 20                         ; Pulse 5 times just showing the numbers
   mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
+  ldi contD, 100                       ; Establish the 1 Hz refresh rate
+  ldi varS, 0x00                       ; Fix the value in the second display aswell
+  
   rjmp _loop
 
 _selec:
