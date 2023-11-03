@@ -214,14 +214,12 @@ _startP:
   reti
 
 _stopP:
-  ldi temp, 0b00000000                 ; Disable everything
+  cbr temp, 0b00001000                 ; Disable the stop switch 
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
   ldi cont1, 0                         ; Set the counter one with a special number
-  ldi contD, 50                        ; Select the counter for the display 1 at 1 Hz
-  mov cont3, contD                     ; Update with the new value from conter Display 1 
   ldi varA, 0x00                       ; Load to register 17 the sum to the next position in RAM
   sbr comV , 0b00000010                ; Add the first bit that means it should stop
 
