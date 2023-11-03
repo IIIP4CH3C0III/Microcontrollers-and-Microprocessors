@@ -329,7 +329,7 @@ __D1:
   sbr comV, 0b00010000                 ; Select the display 2 for the next iteration
 
   mov temp, disp1                      ; Move the value for a valid register to be compared
-  cpi temp, 0xFF                      ; Verify if everthing is at 1s
+  cpi temp, 0xFF                       ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
@@ -339,7 +339,7 @@ __D1:
   in temp, PINC                        ; Get the value from the RAM of PINC
   mov disp1, temp                      ; Move the now value of the display inside disp1
 
-  cpi RaPo, 7                          ; Check if we arrive at 7
+  cpi RaPo, 6                          ; Check if we arrive at 7
   breq __rRaPo                         ; If it was reached go to the reset of his value
   rjmp _continue
 
@@ -349,14 +349,14 @@ __D2:
   cbr comV, 0b00010000                 ; Select the display 1 for the next iteration
  
   mov temp, disp2                      ; Move the value for a valid register to be compared
-  cpi temp, 0xFF                      ; Verify if everthing is at 1s
+  cpi temp, 0xFF                       ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM
   set                                  ; Make our counter move backwards
   sub FaPo, varS                       ; Sum the value in FaPo with the sum defined above
 
-  cpi FaPo, 0                          ; Check if we arrive at 0
+  cpi FaPo, 1                          ; Check if we arrive at 0
   breq __rFaPo                         ; If it was reached go to the reset of his value
   rjmp _continue                       ; Back to the continue
   
