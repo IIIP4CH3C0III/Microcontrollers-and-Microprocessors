@@ -257,7 +257,7 @@ _change50:
 
   
 _timeP:
-  call _time0                          ; Perform the 1 seconds delta T
+  call _timeO                          ; Perform the 1 seconds delta T
   sbrs comV, 4                         ; Verify if the bit 
   rjmp __D1T                           ; Decrement the timer from display 1 
   rjmp __D2T                           ; Decrement the timer from display 2
@@ -340,7 +340,7 @@ __D1:
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
 
   mov temp, disp1                      ; Move the value for a valid register to be compared
-  cpi disp1, 0xFF                      ; Verify if everthing is at 1s
+  cpi temp, 0xFF                      ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
@@ -360,7 +360,7 @@ __D2:
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
  
   mov temp, disp2                      ; Move the value for a valid register to be compared
-  cpi disp2, 0xFF                      ; Verify if everthing is at 1s
+  cpi temp, 0xFF                      ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM
