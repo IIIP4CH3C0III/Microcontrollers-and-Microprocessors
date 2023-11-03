@@ -24,26 +24,29 @@
 
 .include <m128def.inc>                 ; Indicate that we are working with atmega128
 
+.def cont2 = r13                       ; This variable will be used to count until 100
+.def delta = r14                       ; This will count how many seconds passed since the start button was pressed until stop button
 .def maxV  = r15                       ; This variable will be used to compare things
 .def temp  = r16                       ; Definition of temporary variable register
-.def XL    = r26                       ; Defition of the X pointer low and high
-.def XH    = r27
 .def varA  = r17                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
 .def varS  = r18                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
-.def cont1 = r19                       ; This variable will be used to count until 6
-.def contD1= r20                       ; This variable will be used to count until inside timers standart
-.def contD2= r21                       ; This variable will be used to count until inside timers standart
+.def cont1 = r19                       ; This variable will be used to count until maxV
+.def contD1= r20                       ; This variable will be used to count timers for displays
+.def contD2= r21                       ; This variable will be used to count timers for displays
 .def cont3 = r22                       ; This variable will be used to count until inside timers
 .def comV  = r23                       ; This variable will be used to compare things
 .def RaPo  = r24                       ; This variable will store the current position of the rise dice
 .def FaPo  = r25                       ; This variable will store the current position of the falling dice
+.def XL    = r26                       ; Defition of the X pointer low and high
+.def XH    = r27
 
 .equ Reset = 0x0000                    ; Definition of the reset interruption 
 .equ Start = 0x0002                    ; Definition of the start interruption 
 .equ Swi2  = 0x0004                    ; Definition of the switch 2 interruption 
 .equ Swi3  = 0x0006                    ; Definition of the switch 3 interruption 
-.equ Stop  = 0x0008                    ; Definition of the stop  interruption
-.equ Tim0  = 0x001E                    ; Definition of the tim0  interruption
+.equ Stop  = 0x0008                    ; Definition of the stop interruption
+.equ Tim0  = 0x001E                    ; Definition of the tim0 interruption
+.equ Tim1  = 0x0018                    ; Definition of the tim1 interruption
 .equ Code  = 0x0046                    ; Definition of where the code will start
 
 .equ d1    = 0b11110000                ; Definition of the number to select the display 1, including the pull up resistors
@@ -67,6 +70,9 @@
 
 .org Tim0                              ; Indicate if the timer flag was triggered
   rjmp _timeP                          ; Jump to the timer procedure
+
+.org Tim1                              ; Indicate if the timer flag was triggered
+  rjmp _time0                          ; Jump to the timer procedure
 
 .org Code                              ; Where the code will start
   
@@ -152,6 +158,9 @@ _setupWarm:
   ldi contD2, 10                       ; Start the frequency at 10 Hz
   mov cont3, contD1                    ; The value that will actually be decremented from the timer
 
+  ldi temp, 200                        ; Implement for 2 second
+  mov cont2, temp                      ; Move the value from above to the cont2
+  
   rjmp _main                           ; Jump the routine functions and go to main
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -195,7 +204,9 @@ _startP:
   ldi varA , 0x01                      ; Load to register 17 the sum to the next position in RAM
   ldi varS , 0x01                      ; Load to register 17 the sub to the next position in RAM
   ldi comV , 0b00000001                ; Add the last bit that means it should start 
-  
+
+  ldi temp, 0                          ; Is needed because its r15
+  mov delta, temp                      ; Start the delta timer
   
   ldi temp, 255                        ; Is needed because its r15
   mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
@@ -214,8 +225,7 @@ _stopP:
   ldi varA, 0x00                       ; Load to register 17 the sum to the next position in RAM
   sbr comV , 0b00000010                ; Add the first bit that means it should stop
 
-  ldi temp, 20                         ; Is needed because its r15
-  mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
+  mov maxV , delta                     ; The value that took from the start until the stop button
 
   reti
 
@@ -245,8 +255,6 @@ _change50:
 
   
 _timeP:
-  ; D1 0000 0_-1
-  ; D2 0001 0_-1
   sbrs comV, 4                         ; Verify if the bit 
   rjmp __D1T                           ; Decrement the timer from display 1 
   rjmp __D2T                           ; Decrement the timer from display 2
@@ -265,6 +273,16 @@ _endTimeP:
   sbr comV, 0b00001000                 ; Set the bit in comV word, saying the time has passed
   reti                                 ; Return enabling the the interrupts flag from sreg
 
+
+_timeO: ; Gotta check this TODO
+  dec cont2                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
+  brne _endTime0                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
+  inc delta                            ; Increment a second into delta
+  ldi temp, 200                        ; Implement for 2 second
+  mov cont2, temp                      ; Move the value from above to the cont2
+
+_endTime0:  
+  reti
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Main Code
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -273,11 +291,15 @@ _main:
   sbrs comV, 0                         ; Verify if the start button was pressed
   brne _main                           ; If its not equal back to the main
   
-_selec: ; Gotta check this 
-  cpi comV, 0b00000001                 ; Check if the procedure is still in the first stage
-  breq _fStage                         ; If it is go back to the first stage
-  cpi comV, 0b00000011                 ; Check if the procedure is in the second stage
-  breq _sStage                         ; If it is go to the second stage
+_selec:
+  mov temp, comV                       ; Move the value inside the compare value to the temporary
+  andi temp, 0b00000111                ; Perform an and operation, to just check the stage bits
+  cpi temp,  0b00000001                ; Compare and check if it is on the first stage
+  breq _fStage                         ; If its equal go to the first stage
+  cpi temp,  0b00000011                ; Compare and check if the user pressed the stop button and second stage is now active
+  breq _sStage
+  cpi temp,  0b00000111                ; Compare and check if the user pressed the stop button and third stage is now active  
+  breq _tStage
   rjmp _main                           ; If neither options are true return to the main
 
 _fStage:
@@ -288,20 +310,23 @@ _sStage:
   sbr comV, 0b00000100                 ; Set that now we are entering the third stage
   rjmp _loop
 
-_tStage:
+_tStage: 
   ldi comV , 0                         ; Back to the beginning number
-  ldi temp, 0b00000001                 ; Disable everything
+
+  ldi temp, 0b00000001                 ; Disable everything, besides the start button
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
-  rjmp _main
+
+  ldi temp, 20                         ; Pulse 5 times just showing the numbers
+  mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
   
 _loop:
   sbrs comV, 3                         ; Verify if the bit of timer is set 
   rjmp _loop  
   cbr comV, 0b00001000                 ; Clear the bit of the timer 
-
-  sbrs comV, 4                         ; Verify if the bit 
+  
+  sbrs comV, 4                         ; Verify if the bit of display is set 
   rjmp __D1                            ; Selected display 1 
   rjmp __D2                            ; Selected display 2
 
