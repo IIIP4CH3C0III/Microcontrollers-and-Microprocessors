@@ -24,6 +24,8 @@
 
 .include <m128def.inc>                 ; Indicate that we are working with atmega128
 
+.def disp1 = r11                       ; This variable is used store the number that is being showed in the display 1
+.def disp2 = r12                       ; This variable is used store the number that is being showed in the display 2
 .def cont2 = r13                       ; This variable will be used to count until 100
 .def delta = r14                       ; This will count how many seconds passed since the start button was pressed until stop button
 .def maxV  = r15                       ; This variable will be used to compare things
@@ -46,7 +48,6 @@
 .equ Swi3  = 0x0006                    ; Definition of the switch 3 interruption 
 .equ Stop  = 0x0008                    ; Definition of the stop interruption
 .equ Tim0  = 0x001E                    ; Definition of the tim0 interruption
-.equ Tim1  = 0x0018                    ; Definition of the tim1 interruption
 .equ Code  = 0x0046                    ; Definition of where the code will start
 
 .equ d1    = 0b11110000                ; Definition of the number to select the display 1, including the pull up resistors
@@ -70,9 +71,6 @@
 
 .org Tim0                              ; Indicate if the timer flag was triggered
   rjmp _timeP                          ; Jump to the timer procedure
-
-.org Tim1                              ; Indicate if the timer flag was triggered
-  rjmp _time0                          ; Jump to the timer procedure
 
 .org Code                              ; Where the code will start
   
@@ -177,13 +175,13 @@ _loadMove:  ; Arguments r16 as the register that recives the value and r17 as th
   rjmp __set                           ; else decrement
 
 __clr:
-  add XL, varAS                        ; Move the pointer in the low position depending on the argument of register 17 ( + )
+  add XL, varA                         ; Move the pointer in the low position depending on the argument of register 17 ( + )
   brcc __memoryNreach                  ; If this is false means the XL reached FF and we have to increment another position in the XH
   inc XH                               ; Increment a value in the position of more important value of the pointer X
   rjmp __memoryNreach                  ; Goto the end of the routine
 
 __set:
-  sub XL, varAS                        ; Move the pointer in the low position depending on the argument of register 17 ( - )
+  sub XL, varS                        ; Move the pointer in the low position depending on the argument of register 17 ( - )
   brne  __memoryNreach                 ; If it didn't reach the 0 return, otherwise decrement a value of the high pointer
   dec XH                               ; Decrement the high pointer in this case XH 
 
@@ -263,14 +261,16 @@ __D1T:
   dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
   brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
   mov cont3, contD2                    ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
-
+  sbr comV, 0b00001000                 ; Set the bit in comV word, saying the time has passed
+  rjmp _endTimeP
+  
 __D2T:
   dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
   brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
   mov cont3, contD1                    ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
+  sbr comV, 0b00001000                 ; Set the bit in comV word, saying the time has passed
 
 _endTimeP:
-  sbr comV, 0b00001000                 ; Set the bit in comV word, saying the time has passed
   reti                                 ; Return enabling the the interrupts flag from sreg
 
 
@@ -334,14 +334,16 @@ __D1:
   ldi temp, d1                         ; Word to select the display 1 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
 
-  in temp, PINC                        ; Get the value from the RAM of PINC
-  cpi temp, 0xFF                       ; Verify if everthing is at 1s
+  cpi disp1, 0xFF                       ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
   clt                                  ; Make our counter move forward
   sbr comV, 0b00010000                 ; Select the display 2 for the next iteration
   add RaPo, varA                       ; Sum the value in RaPo with the sum defined above
+
+  in temp, PINC                        ; Get the value from the RAM of PINC
+  mov disp1, temp                      ; Move the now value of the display inside disp1
 
   cpi RaPo, 7                          ; Check if we arrive at 7
   breq __rRaPo                         ; If it was reached go to the reset of his value
@@ -350,9 +352,8 @@ __D1:
 __D2:
   ldi temp, d2                         ; Word to select the display 2 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
-
-  in temp, PINC                        ; Get the value from the RAM of PINC
-  cpi temp, 0xFF                       ; Verify if everthing is at 1s
+ 
+  cpi disp2, 0xFF                       ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM
@@ -360,6 +361,10 @@ __D2:
   cbr comV, 0b00010000                 ; Select the display 1 for the next iteration
   sub FaPo, varS                       ; Sum the value in FaPo with the sum defined above
 
+  in temp, PINC                        ; Get the value from the RAM of PINC
+  mov disp2, temp                      ; Move the now value of the display inside disp2
+
+  cpi FaPo, 0                          ; Check if we arrive at 0
   breq __rFaPo                         ; If it was reached go to the reset of his value
   rjmp _continue                       ; Back to the continue
   
