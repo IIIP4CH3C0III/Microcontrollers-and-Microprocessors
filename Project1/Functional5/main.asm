@@ -2,21 +2,19 @@
 ; 
 ; File    : main.asm 
 ; 
-; Created : 29-10-2023
+; Created : 23-10-2023
 ; Author  : Fábio Pacheco, Joana Sousa
 ;
 ; Descrip : 
-;            Using 2 seven segment displays, it is intended to create a game similar to the rolling of 2 dices. 
-;            The winner of the game is the player that achieves the larger number os points. Using the code from operation 4,
-;            the software must be altered to implement the game using 2 seven segment displays, 
-;            considering that display 0 increments and display 1 decrements the value of the digits in the roulette sequence. 
-;            The game starts when switch start is pressed, with the 2 displays working in simultaneous. 
-;            When the switch stop is activated, the display 0 stops rolling but display 1 continues to roll. 
-;            The time interval ∆t, in seconds, between activating the start switch and the stop switch must be saved in
-;            a register (maximum value of 255 s). The display 1 must stop rolling only after ∆t/2 seconds have passed from the moment 
-;            the stop switch is activated. At the end, the displays 0 and 1 must be shown blinking at a
-;            frequency of 1 Hz during a 5 second interval. The switches SW2 (10 Hz) and SW3 (50 Hz) are used to select the frequency 
-;            of the roulette operation in both displays. This frequency can be altered at any time during the game.
+;          Using 2 seven segment displays, it is intended to create a game similar to the rolling of 2 dices. 
+;          The winner of the game is the player that achieves the larger number os points. Using the code from operation 4,
+;          the software must be altered to implement the game using 2 seven segment displays, considering that display 0 increments and display 1
+;          decrements the value of the digits in the roulette sequence. The game starts when switch start is pressed, with the 2 displays working in
+;          simultaneous. When the switch stop is activated, the display 0 stops rolling but display 1 continues to roll. The time interval ∆t, 
+;          in seconds, between activating the start switch and the stop switch must be saved in a register (maximum value of 255 s). 
+;          The display 1 must stop rolling only after ∆t/2 seconds have passed from the moment the stop switch is activated. 
+;          At the end, the displays 0 and 1 must be shown blinking at a frequency of 1 Hz during a 5 second interval. The switches SW2 (10 Hz) and 
+;          SW3 (50 Hz) are used to select the frequency of the roulette operation in both displays. This frequency can be altered at any time during the game.;
 ;
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -26,29 +24,30 @@
 
 .include <m128def.inc>                 ; Indicate that we are working with atmega128
 
+.def maxV  = r15                       ; This variable will be used to compare things
 .def temp  = r16                       ; Definition of temporary variable register
-.def varA  = r17                       ; This variable will be used to set how much are we advancing on the stack pointer 
-.def varS  = r18                       ; This variable will be used to set how much are we returning on the stack pointer 
-.def stag  = r19                       ; This variable is for monitor select, start status, and some other things eventually
-.def RaPo  = r20                       ; This variable will be storing the position of display 1
-.def FaPo  = r21                       ; This variable will be storing the position of display 2
-.def delta = r22                       ; This variable will be storing the time since start was pressed until stop was pressed
-.def timS  = r23                       ; This variable will be storing the time desired
-.def timC  = r24                       ; This variable will be storing the time that will be decremented
-
 .def XL    = r26                       ; Defition of the X pointer low and high
 .def XH    = r27
+.def varA  = r17                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
+.def varS  = r18                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
+.def cont1 = r19                       ; This variable will be used to count until 6
+.def contD1= r20                       ; This variable will be used to count until inside timers standart
+.def contD2= r21                       ; This variable will be used to count until inside timers standart
+.def cont3 = r22                       ; This variable will be used to count until inside timers
+.def comV  = r23                       ; This variable will be used to compare things
+.def RaPo  = r24                       ; This variable will store the current position of the rise dice
+.def FaPo  = r25                       ; This variable will store the current position of the falling dice
 
 .equ Reset = 0x0000                    ; Definition of the reset interruption 
 .equ Start = 0x0002                    ; Definition of the start interruption 
-.equ ChFq1 = 0x0004                    ; Definition of the switch2 interruption 
-.equ ChFq5 = 0x0006                    ; Definition of the switch3 interruption 
+.equ Swi2  = 0x0004                    ; Definition of the switch 2 interruption 
+.equ Swi3  = 0x0006                    ; Definition of the switch 3 interruption 
 .equ Stop  = 0x0008                    ; Definition of the stop  interruption
 .equ Tim0  = 0x001E                    ; Definition of the tim0  interruption
 .equ Code  = 0x0046                    ; Definition of where the code will start
 
-.equ wd1  = 0b11011110                 ; Word for the display 1 
-.equ wd2  = 0b10011110                 ; Word for the display 2 
+.equ d1    = 0b11110000                ; Definition of the number to select the display 1, including the pull up resistors
+.equ d2    = 0b10110000                ; Definition of the number to select the display 2, including the pull up resistors
 
 .cseg                                  ; Start the segment of code to the compiler
 .org Reset                             ; Indicate if the code as an interrrupt with reset
@@ -57,14 +56,14 @@
 .org Start                             ; Indicate if the start button was pressed
   rjmp _startP                         ; Jump to the start procedure
 
+.org Swi2                              ; Indicate if the switch 2 button was pressed
+  rjmp _change10                       ; Jump to the stop procedure
+
+.org Swi3                              ; Indicate if the switch 3 button was pressed
+  rjmp _change50                       ; Jump to the stop procedure
+
 .org Stop                              ; Indicate if the stop  button was pressed
   rjmp _stopP                          ; Jump to the stop procedure
-
-.org ChFq1                             ; Indicate if the switch2 button was pressed
-  rjmp _chFq1                          ; Jump to the switch2 procedure
-
-.org ChFq5                             ; Indicate if the switch3 button was pressed
-  rjmp _chFq5                          ; Jump to the switch3 procedure
 
 .org Tim0                              ; Indicate if the timer flag was triggered
   rjmp _timeP                          ; Jump to the timer procedure
@@ -79,12 +78,12 @@ _setupCold:
   ; Setup up PORTD <Buttons + Dis.Control>
   ldi temp, 0b11000000                 ; Load to register 16 the value to assign to the PORTD
   out DDRD, temp                       ; Update the value on RAM of DDRD, in this case make all inputs besides 6,7
-  ldi temp, wd1                        ; Load to register 16 the value to assign the pull up resistors and the display selection
+  ldi temp, d1                         ; Load to register 16 the value to assign the pull up resistors and the display selection
   out PORTD, temp                      ; Update the value on RAM of PORTD, in this case pull up resistors
   ; Update the EICRA register in RAM, and EIMSK
-  ldi temp, 0b11000011                 ; Load to register 16 the value of activate the interrupt of int3 and int0 at rising edge
+  ldi temp, 0b11111111                 ; Load to register 16 the value of activate the interrupt of int0 until int3 at rising edge
   sts EICRA, temp                      ; Update the value in RAM, should use the STS because ins't in the area covered by OUT
-  ldi temp, 0b00000001                 ; The interrupts that will start activated, we will just use start for now, but this register will be upd
+  ldi temp, 0b00000101                 ; The interrupts that will start activated, we will activate SW1 and SW3
   out EIMSK, temp                      ; From the next intruction on we can recieve interrupts from the START, int0 
 
   sei                                  ; Enable the interrupt flag from SREG
@@ -109,11 +108,11 @@ _setupWarm:
   out sph, temp                        ; Update in RAM the value of the stack pointer high at the 0x10    
 
   ; Inicialization of RAM pointer ( x )
-  ldi XL, 0x00                         ; Load to register pointer X the last position of the RAM pointer low
   ldi XH, 0x01                         ; Load to register pointer X the main position of the RAM pointer high
+  ldi XL, 0x00                         ; Load to register pointer X the last position of the RAM pointer low
 
   ; Save the truth table of the display into RAM
-  ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
+  ldi varA, 0x01                       ; Load to register 17 the sum to the next position in RAM
   clt                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored
 
   ldi temp, 0xC0                       ; Load to register 16 the representation in the display of number 0 
@@ -137,15 +136,22 @@ _setupWarm:
   ldi temp, 0x90                       ; Load to register 16 the representation in the display of number 9
   call _storeMove                      ; Argument is in register 16 and now after save the file where the pointer is and move to the next
   
-  ; Warm display <Print 1>
-  ldi varAS, 8                         ; Subtract 8 to the RAM stack pointer, it should be in 1
-  set                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored, in this case decrement
-  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
-  out PORTC, temp                      ; Update value in RAM, update to 8
-  clt                                  ; This flag defines if we want to add or decrement the stack pointer when loaded or stored
+  ; Clear displays
+  ldi temp, d1                         ; Word to select the display 1 
+  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+  ser temp                             ; Load everthing to 1s
+  out PORTC, temp                      ; Update value in RAM, update to none
+  ldi temp, d2                         ; Word to select the display 2 
+  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+  ser temp                             ; Load everthing to 1s
+  out PORTC, temp                      ; Update value in RAM, update to none
 
-  ; Other Events  
-  
+  ; Other Events
+  ldi comV, 0                          ; This will be a variable use in the rest of the program, this bit will be the flag bit like sreg
+  ldi contD1, 10                       ; Start the frequency at 10 Hz
+  ldi contD2, 10                       ; Start the frequency at 10 Hz
+  mov cont3, contD1                    ; The value that will actually be decremented from the timer
+
   rjmp _main                           ; Jump the routine functions and go to main
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -162,13 +168,13 @@ _loadMove:  ; Arguments r16 as the register that recives the value and r17 as th
   rjmp __set                           ; else decrement
 
 __clr:
-  add XL, varA                         ; Move the pointer in the low position depending on the argument of register 17 ( + )
+  add XL, varAS                        ; Move the pointer in the low position depending on the argument of register 17 ( + )
   brcc __memoryNreach                  ; If this is false means the XL reached FF and we have to increment another position in the XH
   inc XH                               ; Increment a value in the position of more important value of the pointer X
   rjmp __memoryNreach                  ; Goto the end of the routine
 
 __set:
-  sub XL, varS                         ; Move the pointer in the low position depending on the argument of register 17 ( - )
+  sub XL, varAS                        ; Move the pointer in the low position depending on the argument of register 17 ( - )
   brne  __memoryNreach                 ; If it didn't reach the 0 return, otherwise decrement a value of the high pointer
   dec XH                               ; Decrement the high pointer in this case XH 
 
@@ -176,101 +182,184 @@ __memoryNreach:
   ld temp, X                           ; Load the number diagram into the r16
   ret                                  ; Return to the last position  
 
-
-_timer:
-  ret   
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Routines for Interrupts
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _startP:
-  sbr temp, 0b00001100                 ; Set to the register 16 the bit for chanching the activated interrupts
+  ldi temp, 0b00001110                 ; Enable the all the other interrupts besides the start switch
   out EIMSK, temp                      ; Enable the stop interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts
 
-  sbr stag, 0b00000100                 ; Set the bit of start in the stag word
-  ldi timS, 10                         ; Start with 10 Hz 
+  ldi varA , 0x01                      ; Load to register 17 the sum to the next position in RAM
+  ldi varS , 0x01                      ; Load to register 17 the sub to the next position in RAM
+  ldi comV , 0b00000001                ; Add the last bit that means it should start 
+  
+  
+  ldi temp, 255                        ; Is needed because its r15
+  mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
   
   reti
 
 _stopP:
-  ldi temp, 0b00000000                 ; Load to the register 16 the value for chanching the activated interrupts
+  ldi temp, 0b00000000                 ; Disable everything
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
-  sbr stag, 0b00000001                 ; Set the bit of stop in the stag word
+  ldi cont1, 0                         ; Set the counter one with a special number
+  ldi contD1, 50                       ; Select the counter for the display 1 at 1 Hz
+  mov cont3, contD1                    ; Update with the new value from conter Display 1 
+  ldi varA, 0x00                       ; Load to register 17 the sum to the next position in RAM
+  sbr comV , 0b00000010                ; Add the first bit that means it should stop
+
+  ldi temp, 20                         ; Is needed because its r15
+  mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
 
   reti
 
-_chFq1:
-  sbr temp, 0b00000100                 ; Set to the register 16 the bit for chanching the activated interrupts
-  cbr temp, 0b00000010                 ; Clear to the register 16 the bit for chanching the activated interrupts
+_change10:
+  sbr temp, 0b00000100                 ; Enable the switch 3
+  cbr temp, 0b00000010                 ; Disable the switch 2
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
-  reti
-
-_chFq5:
-  sbr temp, 0b00000010                 ; Set to the register 16 the bit for chanching the activated interrupts
-  cbr temp, 0b00000100                 ; Clear to the register 16 the bit for chanching the activated interrupts
-  out EIMSK, temp                      ; Enable the start interrupt from the RAM   
-  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
-  out EIFR, temp                       ; Flags of the interrupts        
-
-  reti
-
-_timeP:
-
-  reti
+  ldi contD1, 10                       ; Enable in both counters the waiting required for 10 Hz
+  ldi contD2, 10
   
+  reti
+
+_change50:
+  sbr temp, 0b00000010                 ; Enable the switch 2
+  cbr temp, 0b00000100                 ; Disable the switch 3
+  out EIMSK, temp                      ; Enable the start interrupt from the RAM   
+  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
+  out EIFR, temp                       ; Flags of the interrupts        
+
+  ldi contD1, 2                        ; Enable in both counters the waiting required for 50 Hz
+  ldi contD2, 2 
+
+  reti
+
+  
+_timeP:
+  ; D1 0000 0_-1
+  ; D2 0001 0_-1
+  sbrs comV, 4                         ; Verify if the bit 
+  rjmp __D1T                           ; Decrement the timer from display 1 
+  rjmp __D2T                           ; Decrement the timer from display 2
+
+__D1T:
+  dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
+  brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
+  mov cont3, contD2                    ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
+
+__D2T:
+  dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
+  brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
+  mov cont3, contD1                    ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
+
+_endTimeP:
+  sbr comV, 0b00001000                 ; Set the bit in comV word, saying the time has passed
+  reti                                 ; Return enabling the the interrupts flag from sreg
+
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Main Code
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _main:
-  ldi RaPo, 0x00                       ; Load to the register RaPo the position to start raising
-  ldi FaPo, 0x07                       ; Load to the register FaPo the position to start falling
-  ldi stag, 0x00                       ; Load the stag all to 0s so display 1 is "selected" and its in no stage, neither started have been pressed
-  ldi delta, 0                         ; Load to the reference delta time at 0
+  sbrs comV, 0                         ; Verify if the start button was pressed
+  brne _main                           ; If its not equal back to the main
   
-  ldi temp, 0b00000001                 ; Set to the register temp the bit for chanching the activated interrupts
-  out EIMSK, temp                      ; Enable the stop interrupt from the RAM   
-  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
-  out EIFR, temp                       ; Flags of the interrupts        
-
-_loop:
-  cpi stag, 0b00000100                 ; Compare to the first possibility, first stage
-  breq _fStage                         ; if it is go the first stage
-  cpi stag, 0b00000101                 ; Compare to the second possibility, second stage
-  breq _sStage                         ; if it is go the second stage
-  cpi stag, 0b00000110                 ; Compare to the third possibility, third stage
-  breq _tStage                         ; if it is go the third stage
-  rjmp _loop                           ; Otherwise back to the loop
+_selec: ; Gotta check this 
+  cpi comV, 0b00000001                 ; Check if the procedure is still in the first stage
+  breq _fStage                         ; If it is go back to the first stage
+  cpi comV, 0b00000011                 ; Check if the procedure is in the second stage
+  breq _sStage                         ; If it is go to the second stage
+  rjmp _main                           ; If neither options are true return to the main
 
 _fStage:
-  mov timC, timS                       ; Insert value of the time desigred to the time counter
-  ldi varA, 1                          ; Load to the add Value argument a 1 
-  ldi varS, 1                          ; Load to the subtract Value argument a 1
-  rjmp _if_DiSe
-  
-_sStage:
-  ldi timS, 100                        ; Load to the timer 1 second
-  mov timC, timS                       ; Move the value from timS to timC
-  ldi varA , 0                         ; Load to the add Value argument a 0 
-  ; ldi contS, delta/2 
-  rjmp _if_DiSe
-  
-_tStage:
-  ldi timC, 100                        ; Load to the timer 1 second
-  ldi varS , 0                         ; Load to the subtract Value argument a 0 
-  ; ldi contS, 5                         ; Load to the counter a 5 
-  rjmp _if_DiSe
+  ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0
+  rjmp _loop
 
-_if_DiSe:
-     
+_sStage:
+  sbr comV, 0b00000100                 ; Set that now we are entering the third stage
+  rjmp _loop
+
+_tStage:
+  ldi comV , 0                         ; Back to the beginning number
+  ldi temp, 0b00000001                 ; Disable everything
+  out EIMSK, temp                      ; Enable the start interrupt from the RAM   
+  ser temp                             ; Load to the register temp everything at 1, to clean all flags after
+  out EIFR, temp                       ; Flags of the interrupts        
+  rjmp _main
+  
+_loop:
+  sbrs comV, 3                         ; Verify if the bit of timer is set 
+  rjmp _loop  
+  cbr comV, 0b00001000                 ; Clear the bit of the timer 
+
+  sbrs comV, 4                         ; Verify if the bit 
+  rjmp __D1                            ; Selected display 1 
+  rjmp __D2                            ; Selected display 2
+
+__D1:
+  ldi temp, d1                         ; Word to select the display 1 
+  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+
+  in temp, PINC                        ; Get the value from the RAM of PINC
+  cpi temp, 0xFF                       ; Verify if everthing is at 1s
+  brne _off                            ; if it is true show the next number
+
+  mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
+  clt                                  ; Make our counter move forward
+  sbr comV, 0b00010000                 ; Select the display 2 for the next iteration
+  add RaPo, varA                       ; Sum the value in RaPo with the sum defined above
+
+  cpi RaPo, 7                          ; Check if we arrive at 7
+  breq __rRaPo                         ; If it was reached go to the reset of his value
+  rjmp _continue
+
+__D2:
+  ldi temp, d2                         ; Word to select the display 2 
+  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+
+  in temp, PINC                        ; Get the value from the RAM of PINC
+  cpi temp, 0xFF                       ; Verify if everthing is at 1s
+  brne _off                            ; if it is true show the next number
+
+  mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM
+  set                                  ; Make our counter move backwards
+  cbr comV, 0b00010000                 ; Select the display 1 for the next iteration
+  sub FaPo, varS                       ; Sum the value in FaPo with the sum defined above
+
+  breq __rFaPo                         ; If it was reached go to the reset of his value
+  rjmp _continue                       ; Back to the continue
+  
+_continue:
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, temp                      ; Update value in RAM, update to 8
+  rjmp _skip
+
+_off:                                  ; Else turn everthing off
+  ser temp                             ; Set every bit in register temporary
+  out PORTC, temp                      ; Update the value in RAM
+
+_skip: 
+  cp cont1, maxV                       ; Compare to check if limit was reached
+  breq _selec                          ; If zero flag is activated return to the first stage
+  inc cont1                            ; Increment the first counter 
+
+  rjmp _loop                        
+
+__rRaPo:
+  ldi RaPo, 0                          ; Set the counter
+  rjmp _continue
+__rFaPo:
+  ldi FaPo, 7                          ; Set the counter
+  rjmp _continue
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; End File

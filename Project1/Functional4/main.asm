@@ -62,7 +62,7 @@ _setupCold:
   ; Setup up PORTD <Buttons + Dis.Control>
   ldi temp, 0b11000000                 ; Load to register 16 the value to assign to the PORTD
   out DDRD, temp                       ; Update the value on RAM of DDRD, in this case make all inputs besides 6,7
-  ldi temp, 0b11011110                 ; Load to register 16 the value to assign the pull up resistors and the display selection
+  ldi temp, 0b11110110                 ; Load to register 16 the value to assign the pull up resistors and the display selection
   out PORTD, temp                      ; Update the value on RAM of PORTD, in this case pull up resistors
   ; Update the EICRA register in RAM, and EIMSK
   ldi temp, 0b11000011                 ; Load to register 16 the value of activate the interrupt of int3 and int0 at rising edge
