@@ -296,17 +296,6 @@ _main:
   sbrs comV, 0                         ; Verify if the start button was pressed
   brne _main                           ; If its not equal back to the main
   
-_selec:
-  mov temp, comV                       ; Move the value inside the compare value to the temporary
-  andi temp, 0b00000111                ; Perform an and operation, to just check the stage bits
-  cpi temp,  0b00000001                ; Compare and check if it is on the first stage
-  breq _fStage                         ; If its equal go to the first stage
-  cpi temp,  0b00000011                ; Compare and check if the user pressed the stop button and second stage is now active
-  breq _sStage
-  cpi temp,  0b00000111                ; Compare and check if the user pressed the stop button and third stage is now active  
-  breq _tStage
-  rjmp _main                           ; If neither options are true return to the main
-
 _fStage:
   ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0
   rjmp _loop
@@ -325,6 +314,18 @@ _tStage:
 
   ldi temp, 20                         ; Pulse 5 times just showing the numbers
   mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
+  rjmp _loop
+
+_selec:
+  mov temp, comV                       ; Move the value inside the compare value to the temporary
+  andi temp, 0b00000111                ; Perform an and operation, to just check the stage bits
+  cpi temp,  0b00000001                ; Compare and check if it is on the first stage
+  breq _fStage                         ; If its equal go to the first stage
+  cpi temp,  0b00000011                ; Compare and check if the user pressed the stop button and second stage is now active
+  breq _sStage
+  cpi temp,  0b00000111                ; Compare and check if the user pressed the stop button and third stage is now active  
+  breq _tStage
+  rjmp _main                           ; If neither options are true return to the main
   
 _loop:
   sbrs comV, 3                         ; Verify if the bit of timer is set 
@@ -338,6 +339,7 @@ _loop:
 __D1:
   ldi temp, d1                         ; Word to select the display 1 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+  sbr comV, 0b00010000                 ; Select the display 2 for the next iteration
 
   mov temp, disp1                      ; Move the value for a valid register to be compared
   cpi temp, 0xFF                      ; Verify if everthing is at 1s
@@ -345,7 +347,6 @@ __D1:
 
   mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
   clt                                  ; Make our counter move forward
-  sbr comV, 0b00010000                 ; Select the display 2 for the next iteration
   add RaPo, varA                       ; Sum the value in RaPo with the sum defined above
 
   in temp, PINC                        ; Get the value from the RAM of PINC
@@ -358,6 +359,7 @@ __D1:
 __D2:
   ldi temp, d2                         ; Word to select the display 2 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+  cbr comV, 0b00010000                 ; Select the display 1 for the next iteration
  
   mov temp, disp2                      ; Move the value for a valid register to be compared
   cpi temp, 0xFF                      ; Verify if everthing is at 1s
@@ -365,7 +367,6 @@ __D2:
 
   mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM
   set                                  ; Make our counter move backwards
-  cbr comV, 0b00010000                 ; Select the display 1 for the next iteration
   sub FaPo, varS                       ; Sum the value in FaPo with the sum defined above
 
   cpi FaPo, 0                          ; Check if we arrive at 0
@@ -382,7 +383,6 @@ _off:                                  ; Else turn everthing off
   out PORTC, temp                      ; Update the value in RAM
 
 _skip: 
-
   in temp, PINC                        ; Get the value from the RAM of PINC
   sbrs comV, 4                         ; Verify if the bit of display is set <inverse>
   mov disp2, temp                      ; Move the now value of the display inside disp2
