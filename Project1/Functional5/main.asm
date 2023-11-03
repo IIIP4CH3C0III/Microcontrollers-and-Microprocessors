@@ -33,8 +33,7 @@
 .def varA  = r17                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
 .def varS  = r18                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
 .def cont1 = r19                       ; This variable will be used to count until maxV
-.def contD1= r20                       ; This variable will be used to count timers for displays
-.def contD2= r21                       ; This variable will be used to count timers for displays
+.def contD = r20                       ; This variable will be used to count timers for displays
 .def cont3 = r22                       ; This variable will be used to count until inside timers
 .def comV  = r23                       ; This variable will be used to compare things
 .def RaPo  = r24                       ; This variable will store the current position of the rise dice
@@ -154,9 +153,8 @@ _setupWarm:
    
   ; Other Events
   ldi comV, 0                          ; This will be a variable use in the rest of the program, this bit will be the flag bit like sreg
-  ldi contD1, 10                       ; Start the frequency at 10 Hz
-  ldi contD2, 10                       ; Start the frequency at 10 Hz
-  mov cont3, contD1                    ; The value that will actually be decremented from the timer
+  ldi contD, 10                        ; Start the frequency at 10 Hz
+  mov cont3, contD                     ; The value that will actually be decremented from the timer
   
   ldi temp, 200                        ; Implement for 2 second
   mov cont2, temp                      ; Move the value from above to the cont2
@@ -204,6 +202,8 @@ _startP:
   ldi varA , 0x01                      ; Load to register 17 the sum to the next position in RAM
   ldi varS , 0x01                      ; Load to register 17 the sub to the next position in RAM
   ldi comV , 0b00000001                ; Add the last bit that means it should start 
+  ldi RaPo, 0                          ; Set the counter
+  ldi FaPo, 7                          ; Set the counter
 
   ldi temp, 0                          ; Is needed because its r15
   mov delta, temp                      ; Start the delta timer
@@ -220,8 +220,8 @@ _stopP:
   out EIFR, temp                       ; Flags of the interrupts        
 
   ldi cont1, 0                         ; Set the counter one with a special number
-  ldi contD1, 50                       ; Select the counter for the display 1 at 1 Hz
-  mov cont3, contD1                    ; Update with the new value from conter Display 1 
+  ldi contD, 50                        ; Select the counter for the display 1 at 1 Hz
+  mov cont3, contD                     ; Update with the new value from conter Display 1 
   ldi varA, 0x00                       ; Load to register 17 the sum to the next position in RAM
   sbr comV , 0b00000010                ; Add the first bit that means it should stop
 
@@ -236,9 +236,8 @@ _change10:
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
-  ldi contD1, 10                       ; Enable in both counters the waiting required for 10 Hz
-  ldi contD2, 10
-  mov cont3, contD1                    ; Update with the new value from conter Display 1 
+  ldi contD, 10                        ; Enable in both counters the waiting required for 10 Hz
+  mov cont3, contD                     ; Update with the new value from conter Display 1 
   
   reti
 
@@ -249,35 +248,23 @@ _change50:
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
-  ldi contD1, 2                        ; Enable in both counters the waiting required for 50 Hz
-  ldi contD2, 2 
-  mov cont3, contD1                    ; Update with the new value from conter Display 1   
+  ldi contD, 2                         ; Enable in both counters the waiting required for 50 Hz
+  mov cont3, contD                     ; Update with the new value from conter Display 1   
 
   reti
 
   
 _timeP:
   call _timeO                          ; Perform the 1 seconds delta T
-  sbrs comV, 4                         ; Verify if the bit 
-  rjmp __D1T                           ; Decrement the timer from display 1 
-  rjmp __D2T                           ; Decrement the timer from display 2
 
-__D1T:
   dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
   brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
-  mov cont3, contD2                    ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
+  mov cont3, contD                     ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
   sbr comV, 0b00001000                 ; Set the bit in comV word, saying the time has passed
   rjmp _endTimeP
-  
-__D2T:
-  dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
-  brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
-  mov cont3, contD1                    ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
-  sbr comV, 0b00001000                 ; Set the bit in comV word, saying the time has passed
 
 _endTimeP:
   reti                                 ; Return enabling the the interrupts flag from sreg
-
 
 _timeO: ; Gotta check this TODO
   dec cont2                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
@@ -294,13 +281,10 @@ _endTime0:
 
 _main:
   sbrs comV, 0                         ; Verify if the start button was pressed
-  ldi RaPo, 0                          ; Set the counter
-  ldi FaPo, 7                          ; Set the counter
   brne _main                           ; If its not equal back to the main
   
 _fStage:
-  ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0
-  
+  ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0  
   rjmp _loop
 
 _sStage:
