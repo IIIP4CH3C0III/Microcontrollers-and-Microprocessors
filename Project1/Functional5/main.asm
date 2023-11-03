@@ -149,16 +149,18 @@ _setupWarm:
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
   ser temp                             ; Load everthing to 1s
   out PORTC, temp                      ; Update value in RAM, update to none
-
+  mov disp1, temp                      ; Reset the display register value
+  mov disp2, temp                      ; Reset the display register value
+   
   ; Other Events
   ldi comV, 0                          ; This will be a variable use in the rest of the program, this bit will be the flag bit like sreg
   ldi contD1, 10                       ; Start the frequency at 10 Hz
   ldi contD2, 10                       ; Start the frequency at 10 Hz
   mov cont3, contD1                    ; The value that will actually be decremented from the timer
-
+  
   ldi temp, 200                        ; Implement for 2 second
   mov cont2, temp                      ; Move the value from above to the cont2
-  
+
   rjmp _main                           ; Jump the routine functions and go to main
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -236,6 +238,7 @@ _change10:
 
   ldi contD1, 10                       ; Enable in both counters the waiting required for 10 Hz
   ldi contD2, 10
+  mov cont3, contD1                    ; Update with the new value from conter Display 1 
   
   reti
 
@@ -248,11 +251,13 @@ _change50:
 
   ldi contD1, 2                        ; Enable in both counters the waiting required for 50 Hz
   ldi contD2, 2 
+  mov cont3, contD1                    ; Update with the new value from conter Display 1   
 
   reti
 
   
 _timeP:
+  call _time0                          ; Perform the 1 seconds delta T
   sbrs comV, 4                         ; Verify if the bit 
   rjmp __D1T                           ; Decrement the timer from display 1 
   rjmp __D2T                           ; Decrement the timer from display 2
@@ -282,7 +287,7 @@ _timeO: ; Gotta check this TODO
   mov cont2, temp                      ; Move the value from above to the cont2
 
 _endTime0:  
-  reti
+  ret
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Main Code
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -334,7 +339,8 @@ __D1:
   ldi temp, d1                         ; Word to select the display 1 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
 
-  cpi disp1, 0xFF                       ; Verify if everthing is at 1s
+  mov temp, disp1                      ; Move the value for a valid register to be compared
+  cpi disp1, 0xFF                      ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
@@ -353,16 +359,14 @@ __D2:
   ldi temp, d2                         ; Word to select the display 2 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
  
-  cpi disp2, 0xFF                       ; Verify if everthing is at 1s
+  mov temp, disp2                      ; Move the value for a valid register to be compared
+  cpi disp2, 0xFF                      ; Verify if everthing is at 1s
   brne _off                            ; if it is true show the next number
 
   mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM
   set                                  ; Make our counter move backwards
   cbr comV, 0b00010000                 ; Select the display 1 for the next iteration
   sub FaPo, varS                       ; Sum the value in FaPo with the sum defined above
-
-  in temp, PINC                        ; Get the value from the RAM of PINC
-  mov disp2, temp                      ; Move the now value of the display inside disp2
 
   cpi FaPo, 0                          ; Check if we arrive at 0
   breq __rFaPo                         ; If it was reached go to the reset of his value
@@ -378,6 +382,9 @@ _off:                                  ; Else turn everthing off
   out PORTC, temp                      ; Update the value in RAM
 
 _skip: 
+  in temp, PINC                        ; Get the value from the RAM of PINC
+  mov disp2, temp                      ; Move the now value of the display inside disp2
+
   cp cont1, maxV                       ; Compare to check if limit was reached
   breq _selec                          ; If zero flag is activated return to the first stage
   inc cont1                            ; Increment the first counter 
