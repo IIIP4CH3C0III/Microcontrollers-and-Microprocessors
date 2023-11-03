@@ -353,7 +353,14 @@ __D1:
 
   cpi RaPo, 7                          ; Check if we arrive at 7
   breq __rRaPo                         ; If it was reached go to the reset of his value
-  rjmp _continue
+
+  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
+  out PORTC, temp                      ; Update value in RAM, update to 8
+
+  in temp, PINC                        ; Get the value from the RAM of PINC
+  mov disp1, temp                      ; Move the now value of the display inside disp1
+
+  rjmp _skip
 
 __D2:
   ldi temp, d2                         ; Word to select the display 2 
@@ -370,11 +377,13 @@ __D2:
 
   cpi FaPo, 0                          ; Check if we arrive at 0
   breq __rFaPo                         ; If it was reached go to the reset of his value
-  rjmp _continue                       ; Back to the continue
   
-_continue:
   call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
   out PORTC, temp                      ; Update value in RAM, update to 8
+
+  in temp, PINC                        ; Get the value from the RAM of PINC
+  mov disp2, temp                      ; Move the now value of the display inside disp2
+
   rjmp _skip
 
 _off:                                  ; Else turn everthing off
@@ -382,9 +391,6 @@ _off:                                  ; Else turn everthing off
   out PORTC, temp                      ; Update the value in RAM
 
 _skip: 
-  in temp, PINC                        ; Get the value from the RAM of PINC
-  mov disp2, temp                      ; Move the now value of the display inside disp2
-
   cp cont1, maxV                       ; Compare to check if limit was reached
   breq _selec                          ; If zero flag is activated return to the first stage
   inc cont1                            ; Increment the first counter 
