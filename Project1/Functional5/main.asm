@@ -281,18 +281,21 @@ _endTime0:
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _main:
+
+  /* Should only be inserted in real-life, not in simulations, excessive cpu load
   ldi temp, d1                         ; Word to select the display 1 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
   out PORTC, disp1                     ; Output the word stored in display 1
   ldi temp, d2                         ; Word to select the display 1 
   out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
   out PORTC, disp2                     ; Output the word stored in display 2
- 
+  */
+   
   sbrs comV, 0                         ; Verify if the start button was pressed
   brne _main                           ; If its not equal back to the main
   
 _fStage:
-  ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0  
+  ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing when should it stop the loop 
   rjmp _loop
 
 _sStage:
@@ -307,7 +310,7 @@ _tStage:
 
   ldi comV , 0                         ; Back to the beginning number
   ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0  
-  ldi temp, 22                         ; Pulse 5 times just showing the numbers
+  ldi temp, 20                         ; Pulse 5 times just showing the numbers
   mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
   ldi contD, 100                       ; Establish the 1 Hz refresh rate
   ldi varS, 0x00                       ; Fix the value in the second display aswell
