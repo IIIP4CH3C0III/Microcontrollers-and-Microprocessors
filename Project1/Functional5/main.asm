@@ -297,7 +297,7 @@ _tStage:
 
   ldi comV , 0                         ; Back to the beginning number
   ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0  
-  ldi temp, 20                         ; Pulse 5 times just showing the numbers
+  ldi temp, 22                         ; Pulse 5 times just showing the numbers
   mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
   ldi contD, 100                       ; Establish the 1 Hz refresh rate
   ldi varS, 0x00                       ; Fix the value in the second display aswell
@@ -313,14 +313,6 @@ _selec:
   breq _sStage
   cpi temp,  0b00000111                ; Compare and check if the user pressed the stop button and third stage is now active  
   breq _tStage
-
-  mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
-  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
-  out PORTC, temp                      ; Update value in RAM, update to 8
-  mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM
-  call _loadMove                       ; Load the value in RAM being the r17 the argument of add and r16 the register to return
-  out PORTC, temp                      ; Update value in RAM, update to 8
-  
   rjmp _main                           ; If neither options are true return to the main
   
 _loop:
