@@ -204,7 +204,10 @@ _startP:
   ldi FaPo, 7                          ; Set the counter
   ldi contD, 10                        ; Start the frequency at 10 Hz
   mov cont3, contD                     ; The value that will actually be decremented from the timer
-
+  ser temp                             ; Load to the temporary register everthing at 1s
+  mov disp1, temp                      ; Reset the display register value
+  mov disp2, temp                      ; Reset the display register value
+  
   ldi temp, 0                          ; Is needed because its r15
   mov delta, temp                      ; Start the delta timer
   
@@ -278,6 +281,13 @@ _endTime0:
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _main:
+  ldi temp, d1                         ; Word to select the display 1 
+  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+  out PORTC, disp1                     ; Output the word stored in display 1
+  ldi temp, d2                         ; Word to select the display 1 
+  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
+  out PORTC, disp2                     ; Output the word stored in display 2
+ 
   sbrs comV, 0                         ; Verify if the start button was pressed
   brne _main                           ; If its not equal back to the main
   
@@ -313,6 +323,14 @@ _selec:
   breq _sStage
   cpi temp,  0b00000111                ; Compare and check if the user pressed the stop button and third stage is now active  
   breq _tStage
+
+  mov XL, RaPo                         ; Move the value from RaPo position to the pointer in RAM
+  call _loadMove                       ; Get the value from RAM of the number
+  mov disp1, temp                      ; And store it inside the register from the display
+  mov XL, FaPo                         ; Move the value from RaPo position to the pointer in RAM  
+  call _loadMove                       ; Get the value from RAM of the number
+  mov disp2, temp                      ; And store it inside the register from the display
+  
   rjmp _main                           ; If neither options are true return to the main
   
 _loop:
