@@ -113,7 +113,8 @@ _setupWarm:
   ; Other Events
   ldi cont , 9                         ; This will be a variable use in the rest of the program
   ldi varAS, 0                         ; We won't be using this variable to add or sub in the rest of the program
-    
+  ldi argTimer, 1                      ; Load the argument timer at 1, so just repeats once it calls the timer
+  
   rjmp _main                           ; Jump the routine functions and go to main
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
@@ -189,6 +190,11 @@ _main:
 _loop:
   in temp, PIND                        ; Read from the RAM the exact value of Inputs
 
+  cpi comV, 0b01001111                 ; Check if the word of person going inside is filled 
+  breq _add
+  cpi comV, 0b10001111                 ; Check if the word of person going inside is filled 
+  breq _sub
+
   cpi temp, 0b11111110                 ; Check if S1 is pressed and S2 is not
   breq _S1AnS2                         
   cpi temp, 0b11011111                 ; Check if S2 is pressed and S1 is not
@@ -197,11 +203,6 @@ _loop:
   breq _S1AS2                         
   cpi temp, 0b11111111                 ; Check if nothing is pressed
   breq _nS1AnS2                         
-
-  cpi comV, 0b01001111                 ; Check if the word of person going inside is filled 
-  breq _add
-  cpi comV, 0b10001111                 ; Check if the word of person going inside is filled 
-  breq _sub
   
   rjmp _loop                           ; Back to the loop
 
@@ -224,7 +225,7 @@ _nS1AS2:
   rjmp _loop                           ; Wasn't actually pressed 
 
   sbrs comV, 6                         ; Skip if the 6 bit is set from the word 0b-1-- ----, which means the person is entering
-  sbr comV, 0b01000000                 ; If it's the first time, set the bit 6 meaning the person is coming in
+  sbr comV, 0b10000000                 ; If it's the first time, set the bit 6 meaning the person is coming in
   sbr comV, 0b00000010                 ; Set the bit 1 corresponds to the S2 was pressed      
   rjmp _loop
 
