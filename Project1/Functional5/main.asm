@@ -257,7 +257,6 @@ _change50:
   
 _timeP:
   call _timeO                          ; Perform the 1 seconds delta T
-
   dec cont3                            ; Decrement the counter3 which is the counter that will be decrementing from the counter 2 
   brne _endTimeP                       ; Verify if already reached 0 and if that's the case jump to the loop, else continue
   mov cont3, contD                     ; Move the value of the counter d1 to the counter 3, reseting the value to decrement
