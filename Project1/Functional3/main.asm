@@ -272,7 +272,7 @@ _sub:
   breq __closeLight                    ; if its true just close the light from the room   
   rjmp _main                           ; Back to the main
 
-__closeDoor:
+__closeLight:
   sbis PORTA, LS                       ; Skip the next line if the light from the door is already turn off
   sbi PORTA, LS                        ; Turn the light off from the room
   rjmp _main                           ; Back to the main
