@@ -26,21 +26,14 @@
 .def XH    = r27
 .def temp  = r16                       ; Definition of temporary variable register
 .def varAS = r17                       ; This variable will be used to set how much are we advancing or returning on the stack pointer 
-.def cont  = r18                       ; Definition of the register that will store the counter value for the lotation
-.def argTimer = r19                    ; Definition of the timer argument
-.def comV  = r20                       ; Definition of the register that will store the compare value
+.def cont1 = r18                       ; Definition of the register that will store the argument timer
+.def comV  = r19                       ; Definition of the register that will store the argument timer
 
 .equ Reset = 0x0000                    ; Definition of the reset interruption 
 .equ Code  = 0x0046                    ; Definition of where the code will start
 
 .equ PE    = 7                         ; Definition of the pin D8 for the door
 .equ LS    = 6                         ; Definition of the pin D7 for the light
-.equ min   = 0                         ; Definition of min value to compare
-.equ max   = 9                         ; Definition of max value to compare
-
-.equ Xcounter = 241                    ; Defition of the constant X of delay    
-.equ Ycounter = 22                     ; Defition of the constant Y of delay
-.equ Zcounter = 1                      ; Defition of the constant Z of delay
 
 .cseg                                  ; Start the segment of code to the compiler
 .org Reset                             ; Indicate if the code as an interrrupt with reset
@@ -111,42 +104,10 @@ _setupWarm:
   out PORTC, temp                      ; Update value in RAM, update to 8
 
   ; Other Events
-  ldi cont , 9                         ; This will be a variable use in the rest of the program
-  ldi varAS, 0                         ; We won't be using this variable to add or sub in the rest of the program
-    
+  ldi comV, 0                          ; This will be a variable use in the rest of the program
+  ldi cont1, 10                        ; This will be a variable use in the rest of the program
+  
   rjmp _main                           ; Jump the routine functions and go to main
-
-;-----------------------------------------------------------------------------------------------------------------------------------------
-; Timer
-;-----------------------------------------------------------------------------------------------------------------------------------------
-
-_delay:
-  push r18                             ; Store the value from the r18 in the stack 
-  push r19                             ; Store the value from the r19 in the stack
-  push r20                             ; Store the value from the r20 in the stack
-  ldi r20, Zcounter                    ; Load to register 20 the value of Z
-__loopZ:                               
-  ldi r19, Ycounter                    ; Load to register 19 the value of Y
-__loopY:
-  ldi r18, Xcounter                    ; Load to register 18 the value of X
-__loopX:
-  dec r18                              ; Decrement the value of X
-  brne __loopX                         ; Back to X loop
-  dec r19                              ; Decrement the value of Y
-  brne __loopY                         ; Back to Y loop
-  dec r20                              ; Decrement the value of Z
-  brne __loopZ                         ; Back to Z loop        
-  ; Remember the LIFO tipology
-  pop r20                              ; Get the value from the past r20 from the stack
-  pop r19                              ; Get the value from the past r19 from the stack
-  pop r18                              ; Get the value from the past r18 from the stack
-  ret                                  ; Return to the place lefted before
-
-_timer:                                ; Argument is register 19 
-  call _delay                          ; Execute the delay of 1 ms
-  dec argTimer                         ; Decrement the value stored in the register 19
-  brne _timer                          ; If the zero wasn't reached back to the loop 
-  ret                                  ; Return to the place lefted before     
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 ; Routines
@@ -181,101 +142,78 @@ __memoryNreach:
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _main:
-  ldi comV, 0                          ; Reset the flag word 
-  mov XL, cont                         ; Insert in the pointer low from X the value inside counter
-  call _loadMove                       ; Get the value in RAM for the value in XL
-  out PORTC, temp                      ; Update the value in RAM for the display 
   
+
 _loop:
   in temp, PIND                        ; Read from the RAM the exact value of Inputs
-
   cpi temp, 0b11111110                 ; Check if S1 is pressed and S2 is not
-  breq _S1AnS2                         
+  breq __1                             ; If that's true check the first sensor
   cpi temp, 0b11011111                 ; Check if S2 is pressed and S1 is not
-  breq _nS1AS2                         
-  cpi temp, 0b11011110                 ; Check if S1 and S2 are pressed
-  breq _S1AS2                         
-  cpi temp, 0b11111111                 ; Check if nothing is pressed
-  breq _nS1AnS2                         
-
-  cpi comV, 0b01001111                 ; Check if the word of person going inside is filled 
-  breq _add
-  cpi comV, 0b10001111                 ; Check if the word of person going inside is filled 
-  breq _sub
-  
+  breq __2                             ; If that's true check the second sensor
   rjmp _loop                           ; Back to the loop
 
-
-_S1AnS2:
-  call _timer                          ; Execute a delay of 1 ms
+__1:
   in temp, PIND                        ; Read from the RAM the exact value of Inputs
-  sbrc temp, 0                         ; Skip the next line if the S1 was indeed pressed
-  rjmp _loop                           ; Wasn't actually pressed 
+  cpi temp, 0b11011110                 ; Check if S1 and S2 are pressed  
+  brne __1                             ; While the two sensors are passed
 
-  sbrs comV, 7                         ; Skip if the 7 bit is set from the word 0b1--- ----, which means the person is leaving
-  sbr comV, 0b01000000                 ; If it's the first time, set the bit 6 meaning the person is coming in
-  sbr comV, 0b00000001                 ; Set the bit 0 corresponds to the S1 was pressed      
-  rjmp _loop
-
-_nS1AS2:
-  call _timer                          ; Execute a delay of 1 ms
+_S2:
   in temp, PIND                        ; Read from the RAM the exact value of Inputs
-  sbrc temp, 5                         ; Skip the next line if the S2 was indeed pressed
-  rjmp _loop                           ; Wasn't actually pressed 
-
-  sbrs comV, 6                         ; Skip if the 6 bit is set from the word 0b-1-- ----, which means the person is entering
-  sbr comV, 0b01000000                 ; If it's the first time, set the bit 6 meaning the person is coming in
-  sbr comV, 0b00000010                 ; Set the bit 1 corresponds to the S2 was pressed      
-  rjmp _loop
-
-_S1AS2:
-  call _timer                          ; Execute a delay of 1 ms
+  cpi temp, 0b11011111                 ; Check if S2 is pressed  
+  brne _S2
+_off1:
   in temp, PIND                        ; Read from the RAM the exact value of Inputs
-  sbrc temp, 0                         ; Skip the next line if the S1 was indeed pressed
-  rjmp _loop                           ; Wasn't actually pressed 
-  sbrc temp, 5                         ; Skip the next line if the S2 was indeed pressed
-  rjmp _loop                           ; Wasn't actually pressed 
-  sbr comV, 0b00000100                 ; Set the bit 2 corresponds to the S1 & S2 were pressed      
-  rjmp _loop
+  cpi temp, 0b11111111                 ; Check if nothing is pressed  
+  brne _off1
+  
+  cpi cont1, 0                         ; Verify if 0 was reached
+  breq __c1                            ; If 0 was reached jump to __c1
+  dec cont1                            ; Decrement a slot in the room
+  cbi PORTA, LS                        ; Turn the light on
+  ; Display 
+  set                                  ; Subtracte the values inside the RAM pointer, the subtract argument varAS
+  ldi varAS, 1                         ; The argument to the LoadMove
+  mov XL, cont1                        ; Move the value on the counter to pointer position
+  call _loadMove                       ; Load the value from RAM and store in the temporary register
+  out PORTC, temp                      ; Print the value on the display
+  ; EndDisplay
+  rjmp _loop                           ; Back to the loop
+     
+__c1:
+  cbi PORTA, PE                        ; Close the door "turn light on"
+  rjmp _loop                           ; Back to the loop
 
-_nS1AnS2:
-  cpi comV, 0                          ; Check if its the first time 
-  breq _loop                           ; If it is back to the loop
-  sbr comV, 0b00001000                 ; Else set the bit 4 which corresponds to the person not being anymore in the front of the sensors
-  rjmp _loop
+__2:
+  in temp, PIND                        ; Read from the RAM the exact value of Inputs
+  cpi temp, 0b11011110                 ; Check if S1 and S2 are pressed  
+  brne __2                             ; While the two sensors are passed
 
-_add:
-  cpi cont, 0                          ; Check if the free spaces arrived at 0 
-  breq __closeDoor                     ; if its true just close door
-  sbic PORTA, LS                       ; Skip the next line if the light is already turn on
-  cbi PORTA, LS                        ; Turn the liht on from the room
-  sbis PORTA, PE                       ; Skip the next line if the light from the door is already turn off
-  sbi PORTA, PE                        ; Turn the light off, which means open the door
-  dec cont                             ; Decrement a free space
-  breq __closeDoor                     ; if it arrive at 0 close the door
-  rjmp _main                           ; Back to the main
+_S1:
+  in temp, PIND                        ; Read from the RAM the exact value of Inputs
+  cpi temp, 0b11111110                 ; Check if S1 is pressed  
+  brne _S1
+_off2:
+  in temp, PIND                        ; Read from the RAM the exact value of Inputs
+  cpi temp, 0b11111111                 ; Check if nothing is pressed  
+  brne _off2
 
-__closeDoor:
-  sbic PORTA, PE                       ; Skip the next line if the light from the door is already turn on
-  cbi PORTA, PE                        ; Turn the light on, which means closign the door
-  rjmp _main                           ; Back to the main
+  cpi cont1, 10                        ; Verify if 10 was reached
+  breq __c2                            ; If 0 was reached jump to __c1
+  dec cont1                            ; Decrement a slot in the room
+  cbi PORTA, LS                        ; Turn the light on
+  sbi PORTA, PE                        ; Open the door "turn off"
+  ; Display 
+  clt                                  ; Add the values inside the RAM pointer, the add argument varAS
+  ldi varAS, 1                         ; The argument to the LoadMove
+  mov XL, cont1                        ; Move the value on the counter to pointer position
+  call _loadMove                       ; Load the value from RAM and store in the temporary register
+  out PORTC, temp                      ; Print the value on the display
+  ; EndDisplay
+  rjmp _loop                           ; Back to the loop
 
-_sub:
-  cpi cont, 9                          ; Check if the free spaces arrived at 9
-  breq __closeLight                    ; if its true just close the light from the room
-  sbic PORTA, LS                       ; Skip the next line if the light is already turn on
-  cbi PORTA, LS                        ; Turn the liht on from the room
-  sbis PORTA, PE                       ; Skip the next line if the light from the door is already turn off
-  sbi PORTA, PE                        ; Turn the light off, which means open the door
-  inc cont                             ; Increment a free space
-  cpi cont, 9                          ; Check if the free spaces arrived at 9
-  breq __closeLight                    ; if its true just close the light from the room   
-  rjmp _main                           ; Back to the main
-
-__closeDoor:
-  sbis PORTA, LS                       ; Skip the next line if the light from the door is already turn off
-  sbi PORTA, LS                        ; Turn the light off from the room
-  rjmp _main                           ; Back to the main
+__c2:
+  sbi PORTA, LS                        ; Turn off the light
+  rjmp _loop                           ; Back to the loop
 
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------
