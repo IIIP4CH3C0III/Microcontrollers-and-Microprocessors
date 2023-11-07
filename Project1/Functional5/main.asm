@@ -192,7 +192,7 @@ __memoryNreach:
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 _startP:
-  ldi temp, 0b00001110                 ; Enable the all the other interrupts besides the start switch
+  ldi temp, 0b00001100                 ; Enable the all the other interrupts besides the start switch
   out EIMSK, temp                      ; Enable the stop interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts
@@ -202,7 +202,7 @@ _startP:
   ldi comV , 0b00000001                ; Add the last bit that means it should start 
   ldi RaPo, 0                          ; Set the counter
   ldi FaPo, 7                          ; Set the counter
-  ldi contD, 5                         ; Start the frequency at 10 Hz
+  ldi contD, 2                         ; Start the frequency at 10 Hz
   mov cont3, contD                     ; The value that will actually be decremented from the timer
   ser temp                             ; Load to the temporary register everthing at 1s
   mov disp1, temp                      ; Reset the display register value
@@ -239,7 +239,7 @@ _change10:
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
-  ldi contD, 5                         ; Enable in both counters the waiting required for 10 Hz
+  ldi contD, 2                         ; Enable in both counters the waiting required for 10 Hz
   mov cont3, contD                     ; Update with the new value from conter Display 1 
   
   reti
