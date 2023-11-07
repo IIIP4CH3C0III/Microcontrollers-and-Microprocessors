@@ -86,7 +86,7 @@ _setupCold:
   ; Update the EICRA register in RAM, and EIMSK
   ldi temp, 0b11111111                 ; Load to register 16 the value of activate the interrupt of int0 until int3 at rising edge
   sts EICRA, temp                      ; Update the value in RAM, should use the STS because ins't in the area covered by OUT
-  ldi temp, 0b00000101                 ; The interrupts that will start activated, we will activate SW1 and SW3
+  ldi temp, 0b00000001                 ; The interrupts that will start activated
   out EIMSK, temp                      ; From the next intruction on we can recieve interrupts from the START, int0 
 
   sei                                  ; Enable the interrupt flag from SREG
@@ -217,6 +217,7 @@ _startP:
   reti
 
 _stopP:
+  lds temp, EIMSK                      ; Get from RAM the value stored in the position of EIMSK and put in temp
   cbr temp, 0b00001000                 ; Disable the stop switch 
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
@@ -231,6 +232,7 @@ _stopP:
   reti
 
 _change10:
+  lds temp, EIMSK                      ; Get from RAM the value stored in the position of EIMSK and put in temp
   sbr temp, 0b00000100                 ; Enable the switch 3
   cbr temp, 0b00000010                 ; Disable the switch 2
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
@@ -243,6 +245,7 @@ _change10:
   reti
 
 _change50:
+  lds temp, EIMSK                      ; Get from RAM the value stored in the position of EIMSK and put in temp
   sbr temp, 0b00000010                 ; Enable the switch 2
   cbr temp, 0b00000100                 ; Disable the switch 3
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
