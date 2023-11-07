@@ -219,7 +219,7 @@ _startP:
 _stopP:
   lds temp, EIMSK                      ; Get from RAM the value stored in the position of EIMSK and put in temp
   cbr temp, 0b00001000                 ; Disable the stop switch 
-  out EIMSK, temp                      ; Enable the start interrupt from the RAM   
+  ;out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
@@ -232,12 +232,14 @@ _stopP:
   reti
 
 _change10:
+  /* Its not working
   lds temp, EIMSK                      ; Get from RAM the value stored in the position of EIMSK and put in temp
   sbr temp, 0b00000100                 ; Enable the switch 3
   cbr temp, 0b00000010                 ; Disable the switch 2
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
+  */
 
   ldi contD, 2                         ; Enable in both counters the waiting required for 10 Hz
   mov cont3, contD                     ; Update with the new value from conter Display 1 
@@ -245,12 +247,14 @@ _change10:
   reti
 
 _change50:
+  /* Its not working
   lds temp, EIMSK                      ; Get from RAM the value stored in the position of EIMSK and put in temp
   sbr temp, 0b00000010                 ; Enable the switch 2
   cbr temp, 0b00000100                 ; Disable the switch 3
   out EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
+  */
 
   ldi contD, 1                         ; Enable in both counters the waiting required for 50 Hz
   mov cont3, contD                     ; Update with the new value from conter Display 1   
@@ -314,7 +318,7 @@ _tStage:
   ldi cont1, 0                         ; Start the "program counter" this will be responsible for knowing if we arrived at RaPo 7 and FaPo 0  
   ldi temp, 20                         ; Pulse 5 times just showing the numbers
   mov maxV , temp                      ; Set the max value to reach in this stage ( 1 - 6 )
-  ldi contD, 50                        ; Establish the 1 Hz refresh rate
+  ldi contD, 25                        ; Establish the 1 Hz refresh rate
   ldi varS, 0x00                       ; Fix the value in the second display aswell
   
   rjmp _loop
