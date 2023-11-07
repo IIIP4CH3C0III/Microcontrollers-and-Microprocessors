@@ -169,7 +169,7 @@ _startP:
 
   ldi varAS, 0x01                      ; Load to register 17 the sum to the next position in RAM
   ldi cont2, 2                         ; The counter for the timer
-  ldi maxV , 10                        ; Set the max value to reach in this stage
+  ldi maxV , 12                        ; Set the max value to reach in this stage
   ldi comV , 0b00000001                ; Add the last bit that means it should start
   mov cont3, cont2
 
@@ -246,9 +246,9 @@ _off:                                  ; Else turn everthing off
   out PORTC, temp                      ; Update the value in RAM
 
 _skip: 
+  inc cont1                            ; Increment the first counter 
   cp cont1, maxV                       ; Compare to check if limit was reached
   breq _selec                          ; If zero flag is activated return to the first stage
-  inc cont1                            ; Increment the first counter 
 
   rjmp _loop                        
 
