@@ -71,6 +71,7 @@ void setup(void) {
 
   OCR0  = timeBase   ;                                     // Time base for the mode 2 equation for a prescaler 1024
   TCCR0 = 0b00111111 ;                                     // Enable CTC mode 2, prescalar of 1024, set 0C0 on compare match
+  TIMSK = 0b00000010 ;                                     // Timer/Counter0 Output Compare Match Interrupt Enable 
     
   sei();
 
@@ -91,41 +92,41 @@ void loop(void) {
 
     PORTD = display[ selectedDisplay ].word;
     PORTC = displayDigits[ display[ selectedDisplay ].num ] ;
+
+    if ( timeFlagF )
+	    switch ( selectedDisplay ) {
+	      case display0: // 11
+	          if ( display[ selectedDisplay ].rise ) {
+	            display[ selectedDisplay ].num++;
+	            counter1--;          	
+	          }
+	          selectedDisplay++;
+	        break;    	
+	      case display1: // 10   	
+	          if ( display[ selectedDisplay ].rise ) {
+	            display[ selectedDisplay ].num++;
+	            counter1--;          	
+	          }
+	          selectedDisplay++;
+	        break;    	
+	      case display2: // 01    	
+	          if ( display[ selectedDisplay ].rise ) {
+	            display[ selectedDisplay ].num++;
+	            counter1--;          	
+	          }
+	          selectedDisplay++;
+	        break;    	
+	      case display3: // 00   	
+	          if ( display[ selectedDisplay ].rise ) {
+	            display[ selectedDisplay ].num++;
+	            counter1--;          	
+	          }
+	          selectedDisplay = display0 ;
+	        break;    	
+	    }
+
   }
   
-  if ( timeFlagF )
-    switch ( selectedDisplay ) {
-      case display0: // 11
-          if ( display[ selectedDisplay ].rise ) {
-            display[ selectedDisplay ].num++;
-            counter1--;          	
-          }
-          selectedDisplay++;
-        break;    	
-      case display1: // 10   	
-          if ( display[ selectedDisplay ].rise ) {
-            display[ selectedDisplay ].num++;
-            counter1--;          	
-          }
-          selectedDisplay++;
-        break;    	
-      case display2: // 01    	
-          if ( display[ selectedDisplay ].rise ) {
-            display[ selectedDisplay ].num++;
-            counter1--;          	
-          }
-          selectedDisplay++;
-        break;    	
-      case display3: // 00   	
-          if ( display[ selectedDisplay ].rise ) {
-            display[ selectedDisplay ].num++;
-            counter1--;          	
-          }
-          selectedDisplay = display0 ;
-        break;    	
-      default:
-    }
-
   if ( !counter1 ) { 
     counter1 = 4;
     timeFlagF = false;
