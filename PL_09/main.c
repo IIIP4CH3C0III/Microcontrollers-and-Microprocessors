@@ -87,11 +87,12 @@ void loop(void) {
   if ( timeFlagD ) {
     timeFlagD = false;
 
-    if( display[ selectedDisplay ].num > 10 ) 
-      display[ selectedDisplay ].num = 0;
+    if( display[ selectedDisplay-1 ].num > 10 ) 
+      display[ selectedDisplay-1 ].num = 0;
 
-    PORTD = display[ selectedDisplay ].word;
-    PORTC = displayDigits[ display[ selectedDisplay ].num ] ;
+    for ( unsigned char i = 0 ; i < 4 ; i++ ) {
+      PORTD = display[ selectedDisplay-1 ].word;
+      PORTC = displayDigits[ display[ selectedDisplay-1 ].num ] ;
 
     if ( timeFlagF )
 	    switch ( selectedDisplay ) {
