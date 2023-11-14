@@ -152,8 +152,7 @@ _setupWarm:
   mov disp2, temp                      ; Reset the display register value
    
   ; Other Events
-  ldi comV, 0                          ; This will be a variable use in the rest of the program, this bit will be the flag bit like sreg
-  
+  ldi comV, 0                          ; This will be a variable use in the rest of the program, this bit will be the flag bit like sreg  
   ldi temp, 200                        ; Implement for 2 second
   mov cont2, temp                      ; Move the value from above to the cont2
 
@@ -219,7 +218,7 @@ _startP:
 _stopP:
   lds temp, EIMSK                      ; Get from RAM the value stored in the position of EIMSK and put in temp
   cbr temp, 0b00001000                 ; Disable the stop switch 
-  ;out EIMSK, temp                      ; Enable the start interrupt from the RAM   
+  ;sds EIMSK, temp                      ; Enable the start interrupt from the RAM   
   ser temp                             ; Load to the register temp everything at 1, to clean all flags after
   out EIFR, temp                       ; Flags of the interrupts        
 
@@ -286,17 +285,7 @@ _endTime0:
 ; Main Code
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
-_main:
-
-  /* Should only be inserted in real-life, not in simulations, excessive cpu load
-  ldi temp, d1                         ; Word to select the display 1 
-  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
-  out PORTC, disp1                     ; Output the word stored in display 1
-  ldi temp, d2                         ; Word to select the display 1 
-  out PORTD, temp                      ; Update the value in RAM of the display based on the temporary value above
-  out PORTC, disp2                     ; Output the word stored in display 2
-  */
-   
+_main:   
   sbrs comV, 0                         ; Verify if the start button was pressed
   brne _main                           ; If its not equal back to the main
   
