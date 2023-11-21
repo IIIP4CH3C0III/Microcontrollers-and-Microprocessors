@@ -20,21 +20,19 @@ main( ) {
 
 void
 loop( DISPLAYS * displays , MOTOR * motor , char word[ numDisplays ] ) {  
-  switch ( flag ) {
-    case 0b00000001:
-      (void)writeInDisplay( displays );
-      flag ^= ( 1 << 0 );
-      break;
-    case 0b00000010:
-      if ( !motor->direction )
-        snprintf( word , sizeof(byte) * numDisplays , "  %d", motor->perDutyC );
-      else
-        snprintf( word , sizeof(byte) * numDisplays , " -%d", motor->perDutyC );
-      
-      (void)updateRegisterDisplays( displays, word );
-      flag ^= ( 1 << 1 );
-      break;
-  }	
+  if( flag & ( 1 << 0 )) {
+    (void)writeInDisplay( displays );
+    flag &= ~( 1 << 0 );
+    if ( !motor->direction )
+      snprintf( word , sizeof(byte) * numDisplays , "  %02d", motor->perDutyC );
+    else
+      snprintf( word , sizeof(byte) * numDisplays , " -%02d", motor->perDutyC );
+  }
+
+  if( flag & ( 1 << 0 )) {
+    (void)updateRegisterDisplays( displays, word );
+    flag &= ~( 1 << 1 );
+  }
  
   nowValue = PINA & 0b00110011;  
   switch ( nowValue ) {
@@ -62,11 +60,11 @@ loop( DISPLAYS * displays , MOTOR * motor , char word[ numDisplays ] ) {
 }
 
 ISR ( TIMER0_COMP_vect ) {
-  flag ^= ( 1 << 0 );
+  flag |= ( 1 << 0 );
 
   if ( counter == 0 ) {
     counter = frequencyDisplays;
-    flag ^= ( 1 << 1 );
+    flag |= ( 1 << 1 );
   }   
   else
     counter-- ;      

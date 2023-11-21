@@ -51,6 +51,31 @@ const unsigned char displayDigits[11]       = { 0xC0, 0xF9, 0xA4, 0xB0, 0x99, 0x
 volatile DISPLAY display[ numDisplays ];
 unsigned char selectedDisplay = 0;
 
+ISR ( INT0_vect ) {
+  display[0].rise = true;
+}
+
+ISR ( INT1_vect ) {
+  display[1].rise = true;
+}
+
+ISR ( INT4_vect ) {
+  display[0].rise = false;
+  display[1].rise = false;
+}
+
+
+ISR ( TIMER0_COMP_vect ) {
+  timeFlagD = true;
+
+  if ( counter == 0 ) {
+    counter = counterResetValue ;
+  	timeFlagF = true ;
+  }   
+  else
+    counter-- ;      
+}
+
 int
 main() {
   (void)setup();
@@ -91,72 +116,45 @@ void loop(void) {
       display[ selectedDisplay ].num = 0;
 
     for ( unsigned char i = 0 ; i < 4 ; i++ ) {
-      PORTD = display[ selectedDisplay-1 ].word;
-      PORTC = displayDigits[ display[ selectedDisplay-1 ].num ] ;
+      	PORTD = display[ selectedDisplay-1 ].word;
+      	PORTC = displayDigits[ display[ selectedDisplay-1 ].num ] ;
 
-    if ( timeFlagF )
-	    switch ( selectedDisplay ) {
-	      case display0: // 11
-	          if ( display[ selectedDisplay ].rise ) {
-	            display[ selectedDisplay ].num++;
-	            counter1--;          	
-	          }
-	          selectedDisplay++;
-	        break;    	
-	      case display1: // 10   	
-	          if ( display[ selectedDisplay ].rise ) {
-	            display[ selectedDisplay ].num++;
-	            counter1--;          	
-	          }
-	          selectedDisplay++;
-	        break;    	
-	      case display2: // 01    	
-	          if ( display[ selectedDisplay ].rise ) {
-	            display[ selectedDisplay ].num++;
-	            counter1--;          	
-	          }
-	          selectedDisplay++;
-	        break;    	
-	      case display3: // 00   	
-	          if ( display[ selectedDisplay ].rise ) {
-	            display[ selectedDisplay ].num++;
-	            counter1--;          	
-	          }
-	          selectedDisplay = display0 ;
-	        break;    	
-	    }
-
-  }
-  
+	    if ( timeFlagF )
+		    switch ( selectedDisplay ) {
+		      case display0: // 11
+		          if ( display[ selectedDisplay ].rise ) {
+		            display[ selectedDisplay ].num++;
+		            counter1--;          	
+		          }
+		          selectedDisplay++;
+		        break;    	
+		      case display1: // 10   	
+		          if ( display[ selectedDisplay ].rise ) {
+		            display[ selectedDisplay ].num++;
+		            counter1--;          	
+		          }
+		          selectedDisplay++;
+		        break;    	
+		      case display2: // 01    	
+		          if ( display[ selectedDisplay ].rise ) {
+		            display[ selectedDisplay ].num++;
+		            counter1--;          	
+		          }
+		          selectedDisplay++;
+		        break;    	
+		      case display3: // 00   	
+		          if ( display[ selectedDisplay ].rise ) {
+		            display[ selectedDisplay ].num++;
+		            counter1--;          	
+		          }
+		          selectedDisplay = display0 ;
+		        break;    	
+		    }
+		}
+  }  
   if ( !counter1 ) { 
     counter1 = 4;
     timeFlagF = false;
   }
-  
-}
-
-ISR ( INT0_vect ) {
-  display[0].rise = true;
-}
-
-ISR ( INT1_vect ) {
-  display[1].rise = true;
-}
-
-ISR ( INT4_vect ) {
-  display[0].rise = false;
-  display[1].rise = false;
-}
-
-
-ISR ( TIMER0_COMP_vect ) {
-  timeFlagD = true;
-
-  if ( counter == 0 ) {
-    counter = counterResetValue ;
-  	timeFlagF = true ;
-  }   
-  else
-    counter-- ;      
 }
 

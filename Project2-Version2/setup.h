@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define timeBaseOCR0                   77
+#define timeBaseOCR0                   7
 #define frequencyPWM2                  500
 
 void setup( void );
