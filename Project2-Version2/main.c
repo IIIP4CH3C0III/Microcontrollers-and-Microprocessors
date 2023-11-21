@@ -23,13 +23,14 @@ loop( DISPLAYS * displays , MOTOR * motor , char word[ numDisplays ] ) {
   if( flag & ( 1 << 0 )) {
     (void)writeInDisplay( displays );
     flag &= ~( 1 << 0 );
-    if ( !motor->direction )
-      snprintf( word , sizeof(byte) * numDisplays , "  %02d", motor->perDutyC );
-    else
-      snprintf( word , sizeof(byte) * numDisplays , " -%02d", motor->perDutyC );
   }
 
-  if( flag & ( 1 << 0 )) {
+  if( flag & ( 1 << 1 )) {
+    if ( !motor->direction )
+      snprintf( word , sizeof(byte) * numDisplays + 1 , "  %02d", motor->perDutyC );
+    else
+      snprintf( word , sizeof(byte) * numDisplays + 1 , " -%02d", motor->perDutyC );
+
     (void)updateRegisterDisplays( displays, word );
     flag &= ~( 1 << 1 );
   }
@@ -62,7 +63,7 @@ loop( DISPLAYS * displays , MOTOR * motor , char word[ numDisplays ] ) {
 ISR ( TIMER0_COMP_vect ) {
   flag |= ( 1 << 0 );
 
-  if ( counter == 0 ) {
+  if ( counter <= 0 ) {
     counter = frequencyDisplays;
     flag |= ( 1 << 1 );
   }   
