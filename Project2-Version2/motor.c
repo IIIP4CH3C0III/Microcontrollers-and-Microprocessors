@@ -28,14 +28,14 @@ unsigned char
 changeRotationMotor( MOTOR * motor ) {
   if( motor->state ) {
     if ( PORTB & ( 1 << 5 ) ) { // Check if bit 5 is 1
-      PORTB |= 0b01100000;      // Stop the rotation
+      PORTB &= 0b10011111;      // Stop the rotation
       _delay_ms(5);             // Perform a delay of 5 ms
-      PORTB &= ~( 1 << 5 );     // Start the rotation in the oter way 
+      PORTB |= ( 1 << 6 );      // Start the rotation in the oter way 
       motor->direction = 0;
     } else {
-  	  PORTB |= 0b01100000;      // Stop the rotation
+  	  PORTB &= 0b10011111;      // Stop the rotation
   	  _delay_ms(5);             // Perform a delay of 5 ms
-      PORTB &= ~( 1 << 6 );     // Start the rotation in the oter way 
+      PORTB |= ( 1 << 6 );      // Start the rotation in the oter way 
       motor->direction = 1;
     }
   }
@@ -44,10 +44,17 @@ changeRotationMotor( MOTOR * motor ) {
 
 unsigned char
 changeStateMotor( MOTOR * motor ) {
-  if ( (PORTB & 0b01100000) == 0b01100000 ) {
-    PORTB &= ~( 1 << 5 );     // Start the rotation in the oter way   	
+  if ( PORTB == 0b01111111 || PORTB == 0b00011111 ) {
     motor->state = 1 ;
+    if ( motor->direction )
+      PORTB |= ( 1 << 5 );     // Start the rotation in the oter way   	
+    else
+      PORTB |= ( 1 << 6 );     // Start the rotation in the oter way   	
+  } else {
+    PORTB &= 0b10011111;       // Stop the rotation
+    motor->state = 0 ;  	
   }
+  
   return 0;
 }
 
