@@ -26,7 +26,7 @@ void setup( void );
 
 typedef unsigned char byte;
 
-byte flag; // In use the first two bits, in this case bit 0 represents time to swap display and bit 1 time to refresh each display  
+volatile byte flag; // In use the first two bits, in this case bit 0 represents time to swap display and bit 1 time to refresh each display  
 byte counter;
 byte beforeValue;
 byte nowValue;
