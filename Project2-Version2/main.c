@@ -21,15 +21,15 @@ main( ) {
 void
 loop( DISPLAYS * displays , MOTOR * motor , char word[ numDisplays ] ) {  
   switch ( flag ) {
-    case 0b11111110:
+    case 0b00000001:
       (void)writeInDisplay( displays );
       flag ^= ( 1 << 0 );
       break;
-    case 0b11111101:
+    case 0b00000010:
       if ( !motor->direction )
-        snprintf( word , sizeof(byte) * numDisplays , " %d", motor->perDutyC );
+        snprintf( word , sizeof(byte) * numDisplays , "  %d", motor->perDutyC );
       else
-        snprintf( word , sizeof(byte) * numDisplays , "-%d", motor->perDutyC );
+        snprintf( word , sizeof(byte) * numDisplays , " -%d", motor->perDutyC );
       
       (void)updateRegisterDisplays( displays, word );
       flag ^= ( 1 << 1 );
