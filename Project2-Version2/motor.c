@@ -13,8 +13,8 @@ createMotor( ) {
   MOTOR * motor = ( MOTOR * ) malloc ( sizeof ( MOTOR ) ) ;
   motor->state    = 0  ; 
   motor->direction= 0  ;
-  motor->absDutyC = 50 ; 
-  motor->perDutyC = 128;
+  motor->absDutyC = 128; 
+  motor->perDutyC = 50 ;
   motor->points   = 5  ;   
 
   // PWM signal

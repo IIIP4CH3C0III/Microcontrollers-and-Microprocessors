@@ -37,23 +37,25 @@ loop( DISPLAYS * displays , MOTOR * motor , char word[ numDisplays ] ) {
  
   nowValue = PINA & 0b00110011;  
   switch ( nowValue ) {
-  	case 0b11111110:
+  	case 0b00110010:
   	  if ( motor->perDutyC < 100 )
-        motor->perDutyC += motor->points ;
-  	  break;
+        if ( beforeValue == 0b00110011 && nowValue == 0b00110010 )
+          motor->perDutyC += motor->points ;
+   	break;
 
-  	case 0b11111101:
+  	case 0b00110001:
   	  if ( motor->perDutyC > 0 )
-        motor->perDutyC -= motor->points ;
-  	  break;
+        if ( beforeValue == 0b00110011 && nowValue == 0b00110001 )
+          motor->perDutyC -= motor->points ;
+  	break;
 
-  	case 0b11101111:
-  	  if ( beforeValue == 0b11111111 && nowValue == 0b11101111 )
+  	case 0b00100011:
+  	  if ( beforeValue == 0b00110011 && nowValue == 0b00100011 )
   	    (void)changeRotationMotor( motor );
   	  break;
 
-  	case 0b11011111:
-  	  if ( beforeValue == 0b11111111 && nowValue == 0b11011111 )
+  	case 0b00010011:
+  	  if ( beforeValue == 0b00110011 && nowValue == 0b00010011 )
         (void)changeStateMotor( motor );
   	  break;
   }   
