@@ -35,7 +35,7 @@ changeRotationMotor( MOTOR * motor ) {
     } else {
   	  PORTB &= 0b10011111;      // Stop the rotation
   	  _delay_ms(5);             // Perform a delay of 5 ms
-      PORTB |= ( 1 << 6 );      // Start the rotation in the oter way 
+      PORTB |= ( 1 << 5 );      // Start the rotation in the oter way 
       motor->direction = 1;
     }
   }

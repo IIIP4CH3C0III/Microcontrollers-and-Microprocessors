@@ -6,4 +6,4 @@ compile:
 		${CC} ${FLAG} -mmcu=${UC} -c *.c -I ./lib-common/include
 
 link:
-		${CC} ${FLAG} -mmcu=${UC} -o *.elf *.o -L ./lib-common/lib -l exec
+		${CC} ${FLAG} -mmcu=${UC} -o funcional2.elf *.o -L ./lib-common/lib

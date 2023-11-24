@@ -26,7 +26,13 @@ void setup( void );
 
 typedef unsigned char byte;
 
-volatile byte flag; // In use the first two bits, in this case bit 0 represents time to swap display and bit 1 time to refresh each display  
+typedef struct {
+	byte Tim0: 1;
+	byte Tim1: 1;
+} FLAGS;
+
+volatile FLAGS flag; 
+
 byte counter;
 byte beforeValue;
 byte nowValue;
