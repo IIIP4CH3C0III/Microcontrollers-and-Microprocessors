@@ -11,8 +11,8 @@
 
 #include "setup.h"
  
-#define frequencyDisplays              6 // counter for 5ms * 6 = 30 ms ~= 30 Hz
-#define frequencyBetweenDisplays       1 // counter for 5ms * 1 = 5  ms ~= 200 Hz
+#define frequencyDisplays              60 // counter for 0.5ms * 60 = 30 ms ~= 30 Hz
+#define frequencyBetweenDisplays       1  // counter for 0.5ms * 1  = 0.5  ms ~= 2000 Hz
 
 #define numDigits                      12
 #define numDisplays                    4

@@ -29,10 +29,18 @@ void setup( void ) {
   // PWM signal, 0CR2 set when creating the motor
   TCCR2 = 0b01110011;                   // PWM in phase correct mode, prescalar 64, Set OC2 on compare match
 
+  // USART    -> RS232	
+  // Assincronous, 19200 bps, 8 bits of data, 1 stop bit, No parity bit on, RX int, 
+  UBRR1H = 0 ;                          // Since the baudRate is 51 no need to use high
+  UBRR1L = 51;
+  UCSR1A = 0 ; 
+  UCSR1B = 0b10011000;                  // Enable RX Int, TX and RX
+  UCSR1C = 0b00000110;                  // 1 stop bit, 8 bits of data, assincronous 
+  
   sei();
     
   // Trimmer  -> PORTF
-  // USART    -> RS232	
+
   // External Interrupts
 
 
