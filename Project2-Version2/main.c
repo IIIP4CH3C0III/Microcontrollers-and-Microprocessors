@@ -143,6 +143,7 @@ interptDigitaData( char status ,
         motor->perDutyC += motor->points ;
       if ( motor->perDutyC >= 100 )
         motor->perDutyC = 99;
+      motor->absDutyC = linearSolver( 255, 0, 100, 0, motor->perDutyC);
       OCR2  = motor->absDutyC;             
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Increase PWM by %02d\n", motor->points );     
     break;
@@ -152,6 +153,7 @@ interptDigitaData( char status ,
         motor->perDutyC -= motor->points ;
       if ( motor->perDutyC <= 0 )
         motor->perDutyC = 0;
+      motor->absDutyC = linearSolver( 255, 0, 100, 0, motor->perDutyC);
       OCR2  = motor->absDutyC;             
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Decrease PWM by %02d\n", motor->points );     
     break;

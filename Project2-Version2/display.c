@@ -21,7 +21,9 @@ const byte displayDigits[numDigits] = {
                                        0x80, // 8
                                        0x90, // 9
                                        0xFF, // 
-                                       0xFD  // - 
+                                       0xBF, // -
+                                       0x88, // A
+                                       0xA1  // D
                                       };
 
 const byte displayActivations[numDisplays] = {
@@ -59,6 +61,7 @@ updateRegisterDisplays( DISPLAYS * displays , char * word ) {
 	switch ( word[i] ) {
 		case 'A':
 		case 'a':
+          displays->display[i].registerN = displayDigits[12];
 		  break;
 		  
 		case 'B':
@@ -71,6 +74,7 @@ updateRegisterDisplays( DISPLAYS * displays , char * word ) {
 
 		case 'D':
 		case 'd':
+          displays->display[i].registerN = displayDigits[13];
 		  break;
 
 		case 'E':
@@ -131,6 +135,7 @@ updateRegisterDisplays( DISPLAYS * displays , char * word ) {
 
 		case 'S':
 		case 's':
+          displays->display[i].registerN = displayDigits[5];
 		  break;
 
 		case 'T':

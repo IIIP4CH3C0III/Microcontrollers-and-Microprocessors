@@ -39,7 +39,11 @@ changeRotationMotor( MOTOR * motor  ) {
   	motor->stage = 1;
   } 
   else if ( motor->stage ) {
-    motor->direction ^= motor->direction;
+    if ( motor->direction )
+      motor->direction = 0;
+    else
+      motor->direction = 1;
+
     motor->stage = 0;
 	(void)changeStateMotor( motor ); 
   }  
@@ -51,9 +55,9 @@ changeStateMotor( MOTOR * motor ) {
   if ( PORTB == 0b01111111 || PORTB == 0b00011111 ) {
     motor->state = 1 ;
     if ( motor->direction )
-      PORTB |= ( 1 << 6 );     // Start the rotation in the oter way   	
-    else
       PORTB |= ( 1 << 5 );     // Start the rotation in the oter way   	
+    else
+      PORTB |= ( 1 << 6 );     // Start the rotation in the oter way   	
     return 0;
   } 
   

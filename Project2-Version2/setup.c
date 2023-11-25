@@ -27,7 +27,7 @@ void setup( void ) {
   TIMSK = 0b00000010;                  // Enable compare on match interrupt for Tim0
 
   // PWM signal, 0CR2 set when creating the motor
-  TCCR2 = 0b01110011;                   // PWM in phase correct mode, prescalar 64, Set OC2 on compare match
+  TCCR2 = 0b01100011;                   // PWM in phase correct mode, prescalar 64, Clear OC2 on compare match
 
   // USART    -> RS232	
   // Assincronous, 19200 bps, 8 bits of data, 1 stop bit, No parity bit on, RX int, 
