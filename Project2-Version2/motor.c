@@ -34,19 +34,18 @@ changeRotationMotor( MOTOR * motor  ) {
    * but the second is, so it will change the rotation based in the bit direction and change the state of the motor again
    */
 
-  if ( motor->state && !motor->stage ) {
+  if ( !motor->stage ) {
   	(void)changeStateMotor( motor );
   	motor->stage = 1;
-  } 
-  else if ( motor->stage ) {
     if ( motor->direction )
       motor->direction = 0;
-    else
+    else 
       motor->direction = 1;
+    return 1;
+  } 
 
-    motor->stage = 0;
-	(void)changeStateMotor( motor ); 
-  }  
+  motor->stage = 0;
+  (void)changeStateMotor( motor ); 
   return 0;	
 }
 

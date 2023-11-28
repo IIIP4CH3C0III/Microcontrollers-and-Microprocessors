@@ -27,7 +27,7 @@
 #define cDisplay                       0
 #define cMotor                         1
 
-#define BUFFER_SIZE                    32
+#define BUFFER_SIZE                    64
 #define baludRate                      51
 
 #define modeSwitches                   'S'
