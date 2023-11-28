@@ -116,34 +116,34 @@ interptDigitaData( char status ,
                   ) {
   switch( status ) {
     case multipleErrors:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Multiple errors\n\r" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\r\n Multiple errors\r\n" );
     break;
     
     case frameError:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Frame error\n\r" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\r\n Frame error\r\n" );
     break;
 
     case dataOverRun:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Data overrun\n\r" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\r\n Data overrun\r\n" );
     break;
 
     case parityError:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Parity bit error\n\r" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\r\n Parity bit error\r\n" );
     break;
 
     case stopMotor:
     case 'p':
       if ( motor->state )
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Stop motor\n\r" );
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Stop motor\r\n" );
       else 
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Start motor\n\r" );
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Start motor\r\n" );
       
       (void)changeStateMotor( motor );
     break;
 
     case invertMotor:
     case 'i':
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Invert direction of motor\n\r" );     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Invert direction of motor\r\n" );     
   	  (void)changeRotationMotor( motor );
     break;
 
@@ -154,7 +154,7 @@ interptDigitaData( char status ,
         motor->perDutyC = 99;
       motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
       OCR2  = motor->absDutyC;             
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Increase PWM by %02d\n\r", motor->points );     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Increase PWM by %02d\r\n", motor->points );     
     break;
 
     case decrementPoints:
@@ -164,33 +164,33 @@ interptDigitaData( char status ,
         motor->perDutyC = 0;
       motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
       OCR2  = motor->absDutyC;             
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Decrease PWM by %02d\n\r", motor->points );     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Decrease PWM by %02d\r\n", motor->points );     
     break;
 
     case report:
     case 'b':
       if ( !motor->direction )
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\n DutyCycle: %02d%%\n Direction: +\n\r", motor->perDutyC );
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\r\n DutyCycle: %02d%%\r\n Direction: +\r\n", motor->perDutyC );
       else
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\n DutyCycle: %02d%%\n Direction: -\n\r", motor->perDutyC );        
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\r\n DutyCycle: %02d%%\r\n Direction: -\r\n", motor->perDutyC );        
     break;
 
     case modeSwitches:
     case 's':
       *mode = modeSwitches;
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Switches mode selected\n\r");     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Switches mode selected\r\n");     
     break;
     
     case modeDigital:
     case 'd':
       *mode = modeDigital;
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Digital mode selected\n\r");     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Digital mode selected\r\n");     
     break;
 
     case modeAnalog:
     case 'a':
       *mode = modeAnalog;
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Analog mode selected\n\r");     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Analog mode selected\r\n");     
     break;
   }	
   return 0;
