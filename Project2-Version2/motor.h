@@ -32,12 +32,12 @@ changeStateMotor( MOTOR * motor );
 MOTOR *
 createMotor( );
 
-unsigned char
-linearSolver( unsigned char y2, 
-              unsigned char y1,
-              unsigned char x2,
-              unsigned char x1,
-              unsigned char var
+float
+linearSolver( float y2, 
+              float y1,
+              float x2,
+              float x1,
+              float var
              );
 
 #endif

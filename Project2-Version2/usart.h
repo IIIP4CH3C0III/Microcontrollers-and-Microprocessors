@@ -12,7 +12,7 @@
 #include "setup.h"
 
 typedef struct {  
-  string recieveBuffer;
+  char recieveBuffer;
   string transmitBuffer;
   byte   status;
 }

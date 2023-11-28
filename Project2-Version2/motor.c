@@ -66,16 +66,16 @@ changeStateMotor( MOTOR * motor ) {
   return 0;
 }
 
-unsigned char
-linearSolver( unsigned char y2, 
-              unsigned char y1,
-              unsigned char x2,
-              unsigned char x1,
-              unsigned char var
+float
+linearSolver( float y2, 
+              float y1,
+              float x2,
+              float x1,
+              float var
              ) {
 
-  unsigned char	m = ( y2 - y1 ) / ( x2 - x1 ) ;
-  unsigned char b = y2 - m*x2 ;
-  unsigned char y = m*var + b ;
+  float	m = ( y2 - y1 ) / ( x2 - x1 ) ;
+  float b = y2 - m*x2 ;
+  float y = m*var + b ;
   return y;
 }

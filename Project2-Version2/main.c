@@ -49,23 +49,32 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDi
   nowValue = PINA & 0b00110011;  
   switch ( nowValue ) {
     case 0b00110010:
-      if ( beforeValue == 0b00110011 && nowValue == 0b00110010 )
+      if ( beforeValue == 0b00110011 && nowValue == 0b00110010 ) {
         (void)interptDigitaData( decrementPoints, usart1, motor, &mode );
- 	    break;
+        (void)transmitStringUSART( usart1 );
+      }
+ 	  break;
 
-	  case 0b00110001:
-      if ( beforeValue == 0b00110011 && nowValue == 0b00110001 )
+	case 0b00110001:
+      if ( beforeValue == 0b00110011 && nowValue == 0b00110001 ) {
         (void)interptDigitaData( incrementPoints , usart1, motor, &mode );
-	    break;
+        (void)transmitStringUSART( usart1 );
+      }
+
+	  break;
 
 	  case 0b00100011:
-	    if ( beforeValue == 0b00110011 && nowValue == 0b00100011 )
-        (void)interptDigitaData( invertMotor, usart1, motor, &mode );
-	    break;
+	    if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
+          (void)interptDigitaData( invertMotor, usart1, motor, &mode );
+          (void)transmitStringUSART( usart1 );	    	
+	    }
+ 	    break;
 
 	  case 0b00010011:
-	    if ( beforeValue == 0b00110011 && nowValue == 0b00010011 )
-        (void)interptDigitaData( stopMotor, usart1, motor, &mode );
+	    if ( beforeValue == 0b00110011 && nowValue == 0b00010011 ) {
+          (void)interptDigitaData( stopMotor, usart1, motor, &mode );
+          (void)transmitStringUSART( usart1 );	    		    	
+	    }
 	    break;
   }     
   beforeValue = PINA & 0b00110011;  
@@ -107,34 +116,34 @@ interptDigitaData( char status ,
                   ) {
   switch( status ) {
     case multipleErrors:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Multiple errors\n" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Multiple errors\n\r" );
     break;
     
     case frameError:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Frame error\n" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Frame error\n\r" );
     break;
 
     case dataOverRun:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Data overrun\n" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Data overrun\n\r" );
     break;
 
     case parityError:
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Parity bit error\n" );
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Error:\n Parity bit error\n\r" );
     break;
 
     case stopMotor:
     case 'p':
       if ( motor->state )
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Stop motor\n" );
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Stop motor\n\r" );
       else 
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Start motor\n" );
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Start motor\n\r" );
       
       (void)changeStateMotor( motor );
     break;
 
     case invertMotor:
     case 'i':
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Invert direction of motor\n" );     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Invert direction of motor\n\r" );     
   	  (void)changeRotationMotor( motor );
     break;
 
@@ -143,9 +152,9 @@ interptDigitaData( char status ,
         motor->perDutyC += motor->points ;
       if ( motor->perDutyC >= 100 )
         motor->perDutyC = 99;
-      motor->absDutyC = linearSolver( 255, 0, 100, 0, motor->perDutyC);
+      motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
       OCR2  = motor->absDutyC;             
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Increase PWM by %02d\n", motor->points );     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Increase PWM by %02d\n\r", motor->points );     
     break;
 
     case decrementPoints:
@@ -153,35 +162,35 @@ interptDigitaData( char status ,
         motor->perDutyC -= motor->points ;
       if ( motor->perDutyC <= 0 )
         motor->perDutyC = 0;
-      motor->absDutyC = linearSolver( 255, 0, 100, 0, motor->perDutyC);
+      motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
       OCR2  = motor->absDutyC;             
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Decrease PWM by %02d\n", motor->points );     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Decrease PWM by %02d\n\r", motor->points );     
     break;
 
     case report:
     case 'b':
       if ( !motor->direction )
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\n DutyCycle: %02d%%\n Direction: +\n", motor->perDutyC );
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\n DutyCycle: %02d%%\n Direction: +\n\r", motor->perDutyC );
       else
-        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\n DutyCycle: %02d%%\n Direction: -\n", motor->perDutyC );        
+        snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Report:\n DutyCycle: %02d%%\n Direction: -\n\r", motor->perDutyC );        
     break;
 
     case modeSwitches:
     case 's':
       *mode = modeSwitches;
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Switches mode selected\n");     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Switches mode selected\n\r");     
     break;
     
     case modeDigital:
     case 'd':
       *mode = modeDigital;
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Digital mode selected\n");     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Digital mode selected\n\r");     
     break;
 
     case modeAnalog:
     case 'a':
       *mode = modeAnalog;
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Analog mode selected\n");     
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\n Analog mode selected\n\r");     
     break;
   }	
   return 0;

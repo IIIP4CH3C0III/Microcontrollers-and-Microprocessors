@@ -3,36 +3,38 @@
 ST_USART *
 createUSART() {
   ST_USART * st_usart = ( ST_USART * ) malloc ( sizeof ( ST_USART ) );
-  (void)strcpy( st_usart->recieveBuffer , "" );
+  st_usart->recieveBuffer = ' ';
   (void)strcpy( st_usart->transmitBuffer , "" );  
   return st_usart;
 }
 
 char 
 recieveStringUSART( ST_USART * st_usart ) {
-  char c;
   st_usart->status = UCSR1A;
   st_usart->status &= 0b00011100;
 
   switch( st_usart->status ){
+    case 0b00000000:
+      st_usart->recieveBuffer = UDR1;
+      break;
+
     case 0b00010000: 
-      c = frameError;
+      st_usart->recieveBuffer = frameError;
       break;
        
     case 0b00001000:    
-      c = dataOverRun;
+      st_usart->recieveBuffer = dataOverRun;
       break;
     
     case 0b00000100:    
-      c = parityError;
+      st_usart->recieveBuffer = parityError;
       break;
 
     default:
-      c = multipleErrors;
+      st_usart->recieveBuffer = multipleErrors;
   }
   
-  st_usart->recieveBuffer[0] = UDR1;
-  return c;
+  return st_usart->recieveBuffer;
 }
 
 byte
