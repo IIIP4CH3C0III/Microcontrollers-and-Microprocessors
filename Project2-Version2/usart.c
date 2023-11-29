@@ -15,7 +15,7 @@ recieveStringUSART( ST_USART * st_usart ) {
 
   switch( st_usart->status ){
     case 0b00000000:
-      st_usart->recieveBuffer = UDR1;
+      st_usart->recieveBuffer = tempBuffer;
       break;
 
     case 0b00010000: 

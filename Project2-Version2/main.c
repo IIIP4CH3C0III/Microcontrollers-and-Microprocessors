@@ -4,7 +4,7 @@
 #include "usart.h"
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1  , char word[ numDisplays ] );
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1  , char word[ numDisplays ] , byte mode );
 
 byte
 interptDigitaData( char status, ST_USART * st_usart , MOTOR * motor , byte * mode );
@@ -15,17 +15,23 @@ main( ) {
   MOTOR * motor = ( MOTOR * ) createMotor();
   ST_USART * usart1 = ( ST_USART * )createUSART();
   char word[ numDisplays ] ;
-  mode = 'D';
+  byte mode = modeDigital ;
+
   (void)setup();
  
   for ( ; ; )
-    (void)loop( display, motor , usart1 , word );
+    (void)loop( display, 
+                motor, 
+                usart1, 
+                word ,
+                mode 
+                );
    
   return 0;
 }
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDisplays ] ) {  
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDisplays ] , byte mode ) {  
   if( flag.Tim0 ) {
     (void)writeInDisplay( displays );
     flag.Tim0 = 0;
@@ -86,6 +92,11 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDi
   }
 }
 
+ISR( USART1_RX_vect ) {
+  flag.RX = 1 ;
+  tempBuffer = UDR1;
+}
+
 ISR ( TIMER0_COMP_vect ) {
   flag.Tim0 = 1;
 
@@ -102,10 +113,6 @@ ISR ( TIMER0_COMP_vect ) {
   }   
   else
     counter[ cMotor ]-- ;      
-}
-
-ISR( USART1_RX_vect ) {
-  flag.RX = 1 ;
 }
 
 byte

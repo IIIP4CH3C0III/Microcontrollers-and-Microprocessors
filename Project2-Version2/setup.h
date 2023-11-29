@@ -61,6 +61,6 @@ volatile FLAGS flag;
 volatile byte counter[ numCounters ];
 byte beforeValue;
 byte nowValue;
-byte mode;
+char tempBuffer;
 
 #endif
