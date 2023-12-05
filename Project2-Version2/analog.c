@@ -15,6 +15,20 @@ createANALOG( void ) {
 }
 
 uint16_t
+analogRead( ) {
+  float sum = 0;
+  byte i;
+  for ( i = 0 ; i < quantityOfNumbersToAverage ; i++ ) {
+    (void)getADCvalue( );
+    sum += analogBuffer;
+  }
+
+  return (uint16_t)(sum / quantityOfNumbersToAverage);
+}
+
+
+/*
+uint16_t
 analogRead( ST_ANALOG * st_analog ) {
   uint16_t sum = 0;
   byte i, n = 0;
@@ -29,4 +43,4 @@ analogRead( ST_ANALOG * st_analog ) {
 
   return (sum / quantityOfNumbersToAverage);
 }
-
+*/

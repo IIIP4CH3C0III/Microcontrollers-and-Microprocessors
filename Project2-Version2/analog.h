@@ -26,9 +26,14 @@ typedef struct {
 ST_ANALOG * 
 createANALOG( void );
 
+/*
 uint16_t
 analogRead( ST_ANALOG * st_analog );
+*/
 
-// extern void analogASMread( void );
+uint16_t
+analogRead( );
+
+extern void getADCvalue( void );
 
 #endif

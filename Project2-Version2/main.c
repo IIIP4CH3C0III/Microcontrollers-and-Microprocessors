@@ -96,12 +96,18 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trim
   }
 
   if( mode == modeAnalog ) {
-    // analogASMread();    
-    // motor->perDutyC = (byte)linearSolver( 100, 0, 1024, 0, (nowValue << 8) + (beforeValue) );
-
-    motor->perDutyC = (byte)linearSolver( 100, 0, 1024, 0, analogRead( trimmer ));
+    // motor->perDutyC = (byte)linearSolver( 100, 0, 1024, 0, analogRead( trimmer ));
+    motor->perDutyC = (byte)linearSolver( 99 , 0, 255, 0, analogRead( ));
     motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
     OCR2  = motor->absDutyC;             
+
+    nowValue = PINA & 0b00110011;  
+    if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
+      (void)interptDigitaData( invertMotor, usart1, motor );
+      (void)transmitStringUSART( usart1 );	    	
+    }
+    beforeValue = PINA & 0b00110011;  
+
   }
 }
 
