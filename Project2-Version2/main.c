@@ -2,18 +2,20 @@
 #include "display.h"
 #include "motor.h"
 #include "usart.h"
+#include "analog.h"
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1  , char word[ numDisplays ] , byte mode );
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1  , ST_ANALOG * trimmer , char word[ numDisplays ] , byte mode );
 
 byte
-interptDigitaData( char status, ST_USART * st_usart , MOTOR * motor , byte * mode );
+interptDigitaData( char status, ST_USART * st_usart ,  MOTOR * motor , byte * mode );
 
 int
 main( ) {
-  DISPLAYS * display = ( DISPLAYS * ) createDisplays();
-  MOTOR * motor = ( MOTOR * ) createMotor();
-  ST_USART * usart1 = ( ST_USART * )createUSART();
+  DISPLAYS *  display = ( DISPLAYS * )  createDisplays();
+  MOTOR *     motor   = ( MOTOR * )     createMotor();
+  ST_USART *  usart1  = ( ST_USART * )  createUSART();
+  ST_ANALOG * trimmer = ( ST_ANALOG * ) createANALOG();
   char word[ numDisplays ] ;
   byte mode = modeDigital ;
 
@@ -23,6 +25,7 @@ main( ) {
     (void)loop( display, 
                 motor, 
                 usart1, 
+                trimmer,
                 word ,
                 mode 
                 );
@@ -31,7 +34,7 @@ main( ) {
 }
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDisplays ] , byte mode ) {  
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trimmer , char word[ numDisplays ] , byte mode ) {  
   if( flag.Tim0 ) {
     (void)writeInDisplay( displays );
     flag.Tim0 = 0;
@@ -52,22 +55,22 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDi
     flag.Tim2 = 0;
   }
 
-  nowValue = PINA & 0b00110011;  
-  switch ( nowValue ) {
-    case 0b00110010:
-      if ( beforeValue == 0b00110011 && nowValue == 0b00110010 ) {
-        (void)interptDigitaData( decrementPoints, usart1, motor, &mode );
-        (void)transmitStringUSART( usart1 );
-      }
- 	  break;
+  if( mode == modeSwitches ) {
+    nowValue = PINA & 0b00110011;  
+    switch ( nowValue ) {
+      case 0b00110010:
+        if ( beforeValue == 0b00110011 && nowValue == 0b00110010 ) {
+          (void)interptDigitaData( decrementPoints, usart1, motor, &mode );
+          (void)transmitStringUSART( usart1 );
+        }
+ 	    break;
 
-	case 0b00110001:
-      if ( beforeValue == 0b00110011 && nowValue == 0b00110001 ) {
-        (void)interptDigitaData( incrementPoints , usart1, motor, &mode );
-        (void)transmitStringUSART( usart1 );
-      }
-
-	  break;
+   	  case 0b00110001:
+        if ( beforeValue == 0b00110011 && nowValue == 0b00110001 ) {
+          (void)interptDigitaData( incrementPoints , usart1, motor, &mode );
+          (void)transmitStringUSART( usart1 );
+        }
+  	    break;
 
 	  case 0b00100011:
 	    if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
@@ -82,13 +85,24 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDi
           (void)transmitStringUSART( usart1 );	    		    	
 	    }
 	    break;
-  }     
-  beforeValue = PINA & 0b00110011;  
+    }     
+    beforeValue = PINA & 0b00110011;  
+  }
 
+  // Digital mode will be always activated on background, because it's the only way to swap between modes, but what can happend is choosing only digital mode
   if( flag.RX ) {
     flag.RX = 0;
     (void)interptDigitaData( (char) recieveStringUSART( usart1 ) , usart1, motor, &mode );
     (void)transmitStringUSART( usart1 );
+  }
+
+  if( mode == modeAnalog ) {
+    // analogASMread();    
+    // motor->perDutyC = (byte)linearSolver( 100, 0, 1024, 0, (nowValue << 8) + (beforeValue) );
+
+    motor->perDutyC = (byte)linearSolver( 100, 0, 1024, 0, analogRead( trimmer ));
+    motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
+    OCR2  = motor->absDutyC;             
   }
 }
 

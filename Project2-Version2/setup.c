@@ -39,8 +39,10 @@ void setup( void ) {
   
   sei();
     
-  // Trimmer  -> PORTF
-
+  // Trimmer  -> PORTF Pin0
+  ADMUX  = 0b00100000;                 // AREF, Canal 0, ADLAR = 1   
+  ADCSRA = 0b10000111;                 // Start ADC, 125k Hz 
+  
   // External Interrupts
 
 

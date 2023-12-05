@@ -12,12 +12,10 @@
 #include <avr/interrupt.h>
 #include <avr/iom128.h>
 
-#include <util/delay.h>
-#define F_CPU 16000000UL
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 #define timeBaseOCR0                   7
 #define frequencyPWM2                  500
@@ -44,16 +42,15 @@
 #define decrementPoints                '-'
 #define report                         'B'
 
-
 void setup( void );
 
 typedef unsigned char byte;
 typedef char string[ BUFFER_SIZE ];
 
 typedef struct {
-	byte Tim0: 1;
-	byte Tim1: 1;
-	byte Tim2: 1;
+	byte Tim0: 1; // Time for the swaping between displays
+	byte Tim1: 1; // Time for each display to update
+	byte Tim2: 1; // Time for the motor to swap rotation
 	byte RX: 1;
 } FLAGS;
 
@@ -62,5 +59,8 @@ volatile byte counter[ numCounters ];
 byte beforeValue;
 byte nowValue;
 char tempBuffer;
+
+#define setBit(PORTIO, bit)              ( (PORTIO) |= ( 1 << bit) )
+#define clearBit(PORTIO, bit)            ( (PORTIO) &= ~( 1 << bit) )
 
 #endif
