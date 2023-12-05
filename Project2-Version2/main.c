@@ -5,10 +5,10 @@
 #include "analog.h"
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1  , ST_ANALOG * trimmer , char word[ numDisplays ] , byte mode );
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1  , ST_ANALOG * trimmer , char word[ numDisplays ] );
 
 byte
-interptDigitaData( char status, ST_USART * st_usart ,  MOTOR * motor , byte * mode );
+interptDigitaData( char status, ST_USART * st_usart ,  MOTOR * motor );
 
 int
 main( ) {
@@ -17,7 +17,7 @@ main( ) {
   ST_USART *  usart1  = ( ST_USART * )  createUSART();
   ST_ANALOG * trimmer = ( ST_ANALOG * ) createANALOG();
   char word[ numDisplays ] ;
-  byte mode = modeDigital ;
+  mode = modeDigital ;
 
   (void)setup();
  
@@ -26,15 +26,14 @@ main( ) {
                 motor, 
                 usart1, 
                 trimmer,
-                word ,
-                mode 
+                word
                 );
    
   return 0;
 }
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trimmer , char word[ numDisplays ] , byte mode ) {  
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trimmer , char word[ numDisplays ] ) {  
   if( flag.Tim0 ) {
     (void)writeInDisplay( displays );
     flag.Tim0 = 0;
@@ -60,28 +59,28 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trim
     switch ( nowValue ) {
       case 0b00110010:
         if ( beforeValue == 0b00110011 && nowValue == 0b00110010 ) {
-          (void)interptDigitaData( decrementPoints, usart1, motor, &mode );
+          (void)interptDigitaData( decrementPoints, usart1, motor );
           (void)transmitStringUSART( usart1 );
         }
  	    break;
 
    	  case 0b00110001:
         if ( beforeValue == 0b00110011 && nowValue == 0b00110001 ) {
-          (void)interptDigitaData( incrementPoints , usart1, motor, &mode );
+          (void)interptDigitaData( incrementPoints , usart1, motor );
           (void)transmitStringUSART( usart1 );
         }
   	    break;
 
 	  case 0b00100011:
 	    if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
-          (void)interptDigitaData( invertMotor, usart1, motor, &mode );
+          (void)interptDigitaData( invertMotor, usart1, motor );
           (void)transmitStringUSART( usart1 );	    	
 	    }
  	    break;
 
 	  case 0b00010011:
 	    if ( beforeValue == 0b00110011 && nowValue == 0b00010011 ) {
-          (void)interptDigitaData( stopMotor, usart1, motor, &mode );
+          (void)interptDigitaData( stopMotor, usart1, motor );
           (void)transmitStringUSART( usart1 );	    		    	
 	    }
 	    break;
@@ -92,7 +91,7 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trim
   // Digital mode will be always activated on background, because it's the only way to swap between modes, but what can happend is choosing only digital mode
   if( flag.RX ) {
     flag.RX = 0;
-    (void)interptDigitaData( (char) recieveStringUSART( usart1 ) , usart1, motor, &mode );
+    (void)interptDigitaData( (char) recieveStringUSART( usart1 ) , usart1, motor );
     (void)transmitStringUSART( usart1 );
   }
 
@@ -132,8 +131,7 @@ ISR ( TIMER0_COMP_vect ) {
 byte
 interptDigitaData( char status , 
                    ST_USART * st_usart , 
-                   MOTOR * motor , 
-                   byte * mode 
+                   MOTOR * motor 
                   ) {
   switch( status ) {
     case multipleErrors:
@@ -198,19 +196,19 @@ interptDigitaData( char status ,
 
     case modeSwitches:
     case 's':
-      *mode = modeSwitches;
+      mode = modeSwitches;
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Switches mode selected\r\n");     
     break;
     
     case modeDigital:
     case 'd':
-      *mode = modeDigital;
+      mode = modeDigital;
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Digital mode selected\r\n");     
     break;
 
     case modeAnalog:
     case 'a':
-      *mode = modeAnalog;
+      mode = modeAnalog;
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Analog mode selected\r\n");     
     break;
   }	

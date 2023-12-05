@@ -59,6 +59,7 @@ volatile byte counter[ numCounters ];
 byte beforeValue;
 byte nowValue;
 char tempBuffer;
+byte mode;
 
 #define setBit(PORTIO, bit)              ( (PORTIO) |= ( 1 << bit) )
 #define clearBit(PORTIO, bit)            ( (PORTIO) &= ~( 1 << bit) )
