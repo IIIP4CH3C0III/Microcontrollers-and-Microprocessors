@@ -5,7 +5,7 @@
 #include "analog.h"
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1  , ST_ANALOG * trimmer , char word[ numDisplays ] );
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDisplays ] );
 
 byte
 interptDigitaData( char status, ST_USART * st_usart ,  MOTOR * motor );
@@ -15,7 +15,6 @@ main( ) {
   DISPLAYS *  display = ( DISPLAYS * )  createDisplays();
   MOTOR *     motor   = ( MOTOR * )     createMotor();
   ST_USART *  usart1  = ( ST_USART * )  createUSART();
-  ST_ANALOG * trimmer = ( ST_ANALOG * ) createANALOG();
   char word[ numDisplays ] ;
   mode = modeDigital ;
 
@@ -25,7 +24,6 @@ main( ) {
     (void)loop( display, 
                 motor, 
                 usart1, 
-                trimmer,
                 word
                 );
    
@@ -33,7 +31,7 @@ main( ) {
 }
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trimmer , char word[ numDisplays ] ) {  
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDisplays ] ) {  
   if( flag.Tim0 ) {
     (void)writeInDisplay( displays );
     flag.Tim0 = 0;
@@ -96,7 +94,6 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , ST_ANALOG * trim
   }
 
   if( mode == modeAnalog ) {
-    // motor->perDutyC = (byte)linearSolver( 100, 0, 1024, 0, analogRead( trimmer ));
     motor->perDutyC = (byte)linearSolver( 99 , 0, 255, 0, analogRead( ));
     motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
     OCR2  = motor->absDutyC;             
