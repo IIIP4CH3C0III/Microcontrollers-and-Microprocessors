@@ -45,5 +45,6 @@ transmitStringUSART( ST_USART * st_usart ) {
     UDR1 = st_usart->transmitBuffer[i];
     i++;
   }
+  return 0;
 }
 

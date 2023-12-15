@@ -43,6 +43,11 @@ void setup( void ) {
   ADMUX  = 0b00100000;                 // AREF, Canal 0, ADLAR = 1   
   ADCSRA = 0b10000111;                 // Start ADC, 125k Hz 
   
+  // Step Motor -> PORTE 
+  DDRE   = 0b00001111;                 // The step only needs 4 pins to control
+  PORTE  = 0b11110000;                 // Activate the pull up resistors
+  
+  
   // External Interrupts
 
 

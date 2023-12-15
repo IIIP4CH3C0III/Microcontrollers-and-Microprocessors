@@ -13,14 +13,22 @@
 
 #define  completeRotationInSteps   20
 #define  tableRowsForStep          4
+#define  stepDegrees               18  
 
 typedef struct {
-  uint16_t phase;
+  int16_t phase;
   byte word[ tableRowsForStep ];
+  byte position;
 
 } STEP_MOTOR;
 
 STEP_MOTOR * 
 createStepMotor( void );
+
+byte
+rotationStepMotor( STEP_MOTOR * st , uint16_t phaseIntended , char direction , byte origin );
+
+uint16_t
+getPhaseDif ( uint16_t phaseNow , uint16_t phaseIntented  , char * direction );
 
 #endif

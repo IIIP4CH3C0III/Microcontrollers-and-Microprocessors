@@ -14,6 +14,7 @@
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 #include <avr/io.h>
+#include <avr/iom128.h>
 
 #define temp r16                       ; Temporary register
 #define ADSC 6                         ; Temporary register
@@ -27,17 +28,17 @@
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 getADCvalue:
-  lds temp, ADCSRA                     ; Get the data from RAM to temp
-  sbr temp, 0b01000000                 ; Start the conversion 
-  sts ADCSRA, temp                     ; Update the value in RAM
+  lds r16, ADCSRA                     ; Get the data from RAM to temp
+  sbr r16, 0b01000000                 ; Start the conversion 
+  sts ADCSRA, r16                     ; Update the value in RAM
   
 _loop:
-  lds  temp, ADCSRA                    ; Get the flags from the state register
-  sbrc temp, ADSC                      ; Check if the bit 6 is set, if 
+  lds  r16, ADCSRA                    ; Get the flags from the state register
+  sbrc r16, 6                         ; Check if the bit 6 is set, if 
   rjmp _loop             
 
-  lds temp, ADCH                       ; Read the value from RAM
-  sts analogBuffer, temp               ; Load the variable into RAM to access in C program
+  lds r16, ADCH                       ; Read the value from RAM
+  sts analogBuffer, r16               ; Load the variable into RAM to access in C program
   
   ret
 

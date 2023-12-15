@@ -9,6 +9,9 @@
 #ifndef SETUP_H
 #define SETUP_H
 
+#define F_CPU 16000000UL
+#include <util/delay.h>
+
 #include <avr/interrupt.h>
 #include <avr/iom128.h>
 
@@ -34,13 +37,15 @@
 
 #define multipleErrors                 'e'
 #define frameError                     'f'
-#define dataOverRun                    'r'
+#define dataOverRun                    'o'
 #define parityError                    'q'
 #define stopMotor                      'P'
 #define invertMotor                    'I'
 #define incrementPoints                '+'
 #define decrementPoints                '-'
 #define report                         'B'
+#define stepMotorRightRotation         'R'
+#define stepMotorLeftRotation          'L'
 
 void setup( void );
 

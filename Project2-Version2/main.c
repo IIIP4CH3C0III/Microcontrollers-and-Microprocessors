@@ -3,18 +3,20 @@
 #include "motor.h"
 #include "usart.h"
 #include "analog.h"
+#include "stepMotor.h"
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDisplays ] );
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , STEP_MOTOR * stepMotor , char word[ numDisplays ] );
 
 byte
-interptDigitaData( char status, ST_USART * st_usart ,  MOTOR * motor );
+interptDigitaData( char status, ST_USART * st_usart ,  MOTOR * motor ,  STEP_MOTOR * stepMotor );
 
 int
 main( ) {
-  DISPLAYS *  display = ( DISPLAYS * )  createDisplays();
-  MOTOR *     motor   = ( MOTOR * )     createMotor();
-  ST_USART *  usart1  = ( ST_USART * )  createUSART();
+  DISPLAYS *     display = ( DISPLAYS * )  createDisplays();
+  MOTOR *        motor   = ( MOTOR * )     createMotor();
+  ST_USART *     usart1  = ( ST_USART * )  createUSART();
+  STEP_MOTOR * stepMotor = ( STEP_MOTOR * )createStepMotor();
   char word[ numDisplays ] ;
   mode = modeDigital ;
 
@@ -24,6 +26,7 @@ main( ) {
     (void)loop( display, 
                 motor, 
                 usart1, 
+				stepMotor,
                 word
                 );
    
@@ -31,7 +34,7 @@ main( ) {
 }
 
 void
-loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDisplays ] ) {  
+loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * stepMotor , char word[ numDisplays ] ) {  
   if( flag.Tim0 ) {
     (void)writeInDisplay( displays );
     flag.Tim0 = 0;
@@ -57,28 +60,28 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDi
     switch ( nowValue ) {
       case 0b00110010:
         if ( beforeValue == 0b00110011 && nowValue == 0b00110010 ) {
-          (void)interptDigitaData( decrementPoints, usart1, motor );
+          (void)interptDigitaData( decrementPoints, usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );
         }
  	    break;
 
    	  case 0b00110001:
         if ( beforeValue == 0b00110011 && nowValue == 0b00110001 ) {
-          (void)interptDigitaData( incrementPoints , usart1, motor );
+          (void)interptDigitaData( incrementPoints , usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );
         }
   	    break;
 
 	  case 0b00100011:
 	    if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
-          (void)interptDigitaData( invertMotor, usart1, motor );
+          (void)interptDigitaData( invertMotor, usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );	    	
 	    }
  	    break;
 
 	  case 0b00010011:
 	    if ( beforeValue == 0b00110011 && nowValue == 0b00010011 ) {
-          (void)interptDigitaData( stopMotor, usart1, motor );
+          (void)interptDigitaData( stopMotor, usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );	    		    	
 	    }
 	    break;
@@ -89,7 +92,7 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDi
   // Digital mode will be always activated on background, because it's the only way to swap between modes, but what can happend is choosing only digital mode
   if( flag.RX ) {
     flag.RX = 0;
-    (void)interptDigitaData( (char) recieveStringUSART( usart1 ) , usart1, motor );
+    (void)interptDigitaData( (char) recieveStringUSART( usart1 ) , usart1, motor, stepMotor );
     (void)transmitStringUSART( usart1 );
   }
 
@@ -100,7 +103,7 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , char word[ numDi
 
     nowValue = PINA & 0b00110011;  
     if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
-      (void)interptDigitaData( invertMotor, usart1, motor );
+      (void)interptDigitaData( invertMotor, usart1, motor, stepMotor );
       (void)transmitStringUSART( usart1 );	    	
     }
     beforeValue = PINA & 0b00110011;  
@@ -134,7 +137,8 @@ ISR ( TIMER0_COMP_vect ) {
 byte
 interptDigitaData( char status , 
                    ST_USART * st_usart , 
-                   MOTOR * motor 
+                   MOTOR * motor,  
+				   STEP_MOTOR * stepMotor 
                   ) {
   switch( status ) {
     case multipleErrors:
@@ -214,6 +218,23 @@ interptDigitaData( char status ,
       mode = modeAnalog;
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Analog mode selected\r\n");     
     break;
+	
+    case stepMotorRightRotation:
+	case 'r':
+	  rotationStepMotor( stepMotor , stepDegrees , '+' , 0);
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to right 1 step\r\n Degrees:%d\r\n" , stepMotor->phase );
+	break;
+
+    case stepMotorLeftRotation:
+    case 'l':
+      rotationStepMotor( stepMotor , stepDegrees , '-' , 0);
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to left 1 step\r\n Degrees:%d\r\n" , stepMotor->phase);
+    break;
+	
+	case '9':
+      rotationStepMotor( stepMotor , 90 , '+' , 1);
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 90 degrees\r\n");
+	break;
   }	
   return 0;
 }
