@@ -47,6 +47,7 @@
 #define report                         'B'
 #define stepMotorRightRotation         'R'
 #define stepMotorLeftRotation          'L'
+#define stepMotorSetOrigin             'Z'
 #define stepMotorMove000origin         '0'
 #define stepMotorMove090origin         '9'
 #define stepMotorMove180origin         '1'
