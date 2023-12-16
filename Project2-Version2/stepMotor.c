@@ -47,20 +47,25 @@ rotationStepMotor( STEP_MOTOR * st , uint16_t phaseIntended , char direction, by
 uint16_t
 getPhaseDif ( uint16_t phaseNow , uint16_t phaseIntented  , char * direction ) {
   uint16_t dif = 0;
+  phaseIntented %= 360;                                    // if the value inside phaseIntended is 360 it will be 0, otherwise is unchanged
   if ( phaseIntented == phaseNow )
     return dif;
   	
   if ( phaseIntented > phaseNow ){    
 	dif = phaseIntented - phaseNow;
 	if ( dif > ( 360 - phaseIntented + phaseNow ) ) {
+      *direction = '+';                                    // rotation in Clockwise
 	  return (360 - phaseIntented + phaseNow);
 	}
+	*direction = '-';                                      // rotation in AntiClockwise
 	return dif;
   }
   
   dif = phaseNow - phaseIntented;
   if ( dif > ( 360 - phaseNow + phaseIntented ) ) {
+ 	  *direction = '-';                                    // rotation in AntiClockwise
 	  return (360 - phaseNow + phaseIntented );
   }
+  *direction = '+';                                        // rotation in Clockwise
   return dif;
 }
