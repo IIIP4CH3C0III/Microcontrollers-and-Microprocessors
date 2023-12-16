@@ -107,7 +107,11 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
       (void)transmitStringUSART( usart1 );	    	
     }
     beforeValue = PINA & 0b00110011;  
+  }
 
+  if( flag.Tim3 && stepMotor->numSteps != 0 ) {
+    rotationStepMotor( stepMotor , 0 , 0 );          // No need to give parameters now, they are already in use
+    flag.Tim3 = 0;
   }
 }
 
@@ -132,6 +136,14 @@ ISR ( TIMER0_COMP_vect ) {
   }   
   else
     counter[ cMotor ]-- ;      
+
+  if ( counter[ cStepMotor ] <= 0 ) {
+    counter[ cStepMotor ] = timeChangeInductor;
+    flag.Tim3 = 1 ;
+  }   
+  else
+    counter[ cStepMotor ]-- ;      
+    
 }
 
 byte
@@ -221,28 +233,30 @@ interptDigitaData( char status ,
 	
     case stepMotorRightRotation:
 	case 'r':
-	  rotationStepMotor( stepMotor , stepDegrees , '+' , !originRelated );
+      stepMotor->direction = '+';
+	  rotationStepMotor( stepMotor , stepDegrees, !originRelated );
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to right 1 step\r\n Degrees:%d\r\n" , stepMotor->phase );
 	break;
 
     case stepMotorLeftRotation:
     case 'l':
-      rotationStepMotor( stepMotor , stepDegrees , '-' , !originRelated );
+      stepMotor->direction = '-';
+      rotationStepMotor( stepMotor , stepDegrees , !originRelated );
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to left 1 step\r\n Degrees:%d\r\n" , stepMotor->phase );
     break;
 	
 	case stepMotorMove000origin:
-      rotationStepMotor( stepMotor , 0 , '+' ,   originRelated );
+      rotationStepMotor( stepMotor, 0,  originRelated );
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 0 degrees\r\n Degrees:%d\r\n" , stepMotor->phase);
 	break;
 
 	case stepMotorMove090origin:
-      rotationStepMotor( stepMotor , 90 , '+' ,  originRelated );
+      rotationStepMotor( stepMotor, 90, originRelated );
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 90 degrees\r\n Degrees:%d\r\n" , stepMotor->phase);
 	break;
 
 	case stepMotorMove180origin:
-      rotationStepMotor( stepMotor , 180 , '+' , originRelated );
+      rotationStepMotor( stepMotor, 180, originRelated );
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 180 degrees\r\n Degrees:%d\r\n" , stepMotor->phase);
 	break;
   }	

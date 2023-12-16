@@ -23,10 +23,11 @@
 #define timeBaseOCR0                   7
 #define frequencyPWM2                  500
 
-#define numCounters                    2
+#define numCounters                    3
 // Names of the counters
 #define cDisplay                       0
 #define cMotor                         1
+#define cStepMotor                     2 
 
 #define BUFFER_SIZE                    64
 #define baludRate                      51
@@ -60,7 +61,8 @@ typedef struct {
 	byte Tim0: 1; // Time for the swaping between displays
 	byte Tim1: 1; // Time for each display to update
 	byte Tim2: 1; // Time for the motor to swap rotation
-	byte RX: 1;
+    byte Tim3: 1; // Time for the stepMotor inertia
+	byte RX: 1;  // Recieve data in USART
 } FLAGS;
 
 volatile FLAGS flag; 
