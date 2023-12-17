@@ -231,6 +231,12 @@ interptDigitaData( char status ,
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to left 1 step\r\n Degrees:%d\r\n" , stepMotor->phase );
     break;
 	
+    case stepMotorSetOrigin:
+    case 'z':
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Set new origin at %d degrees from before Origin\r\n" , stepMotor->phase );
+      stepMotor->phase = 0;
+    break;
+
 	case stepMotorMove000origin:
       rotationStepMotor( stepMotor , 0 , '+' ,   originRelated );
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 0 degrees\r\n Degrees:%d\r\n" , stepMotor->phase);
