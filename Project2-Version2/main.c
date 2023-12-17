@@ -47,7 +47,7 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
       else
         snprintf( word , sizeof(byte) * numDisplays + 1 , "%c-%02d", mode , motor->perDutyC );
     } else
-        snprintf( word , sizeof(byte) * numDisplays + 1 , "%c%03d", mode, motor->perDutyC );
+        snprintf( word , sizeof(byte) * numDisplays + 1 , "%c%03d", mode, stepMotor->phase );
     
 
     (void)updateRegisterDisplays( displays, word );
