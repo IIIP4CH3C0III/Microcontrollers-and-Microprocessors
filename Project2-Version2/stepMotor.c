@@ -11,7 +11,7 @@ createStepMotor( void ) {
    st->phase = 0;
    st->position = 0;
    st->numSteps = 0;
-	return st;
+   return st;
 }
 
 byte
