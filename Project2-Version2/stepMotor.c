@@ -21,31 +21,36 @@ rotationStepMotor( STEP_MOTOR * st , uint16_t phaseIntended, byte origin ) {
       st->numSteps = phaseIntended * completeRotationInSteps / 360;
     else
       st->numSteps = (uint16_t)getPhaseDif( st , phaseIntended ) * completeRotationInSteps / 360;
+    flag.ROT = 1;
   } 
 
-  if ( st->direction == '+' ){
-    st->position++;
+  if ( st->numSteps == 0 )
+    flag.ROT = 0;
 
-    if ( st->position == 4 )
-      st->position = 0;
+  if ( flag.ROT ) {
+    if ( st->direction == '+' ){
+      st->position++;
 
-    st->phase += stepDegrees;
-    if ( st->phase >= 360 )
-      st->phase = st->phase - 360;
-  }  
-  else {
-    st->position--;
+      if ( st->position == 4 )
+        st->position = 0;
 
-    if ( st->position == 255 )
-      st->position = 3;
+      st->phase += stepDegrees;
+      if ( st->phase >= 360 )
+        st->phase = st->phase - 360;
+    }   
+    else {
+      st->position--;
 
-    st->phase -= stepDegrees;
-    if ( st->phase < 0 )
-      st->phase = 360 + st->phase ;
+      if ( st->position == 255 )
+        st->position = 3;
+
+      st->phase -= stepDegrees;
+      if ( st->phase < 0 )
+        st->phase = 360 + st->phase ;
+    }
+    PORTE = st->word[ st->position ];	
+    st->numSteps--;  	
   }
-
-  PORTE = st->word[ st->position ];	
-
   return 0;
 }
 

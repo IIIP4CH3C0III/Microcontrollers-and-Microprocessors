@@ -41,10 +41,14 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
   }
 
   if( flag.Tim1 ) {
-    if ( !motor->direction )
-      snprintf( word , sizeof(byte) * numDisplays + 1 , "%c %02d", mode , motor->perDutyC );
-    else
-      snprintf( word , sizeof(byte) * numDisplays + 1 , "%c-%02d", mode , motor->perDutyC );
+    if ( mode != modeStepMotor ) {
+      if ( !motor->direction )
+        snprintf( word , sizeof(byte) * numDisplays + 1 , "%c %02d", mode , motor->perDutyC );
+      else
+        snprintf( word , sizeof(byte) * numDisplays + 1 , "%c-%02d", mode , motor->perDutyC );
+    } else
+        snprintf( word , sizeof(byte) * numDisplays + 1 , "%c%03d", mode, motor->perDutyC );
+    
 
     (void)updateRegisterDisplays( displays, word );
     flag.Tim1 = 0;
@@ -109,9 +113,9 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
     beforeValue = PINA & 0b00110011;  
   }
 
-  if( flag.Tim3 && stepMotor->numSteps != 0 ) {
-    rotationStepMotor( stepMotor , 0 , 0 );          // No need to give parameters now, they are already in use
+  if( flag.Tim3 && flag.ROT ) {
     flag.Tim3 = 0;
+    rotationStepMotor( stepMotor , 0 , 0 );          // No need to give parameters now, they are already in use
   }
 }
 
@@ -229,6 +233,12 @@ interptDigitaData( char status ,
     case 'a':
       mode = modeAnalog;
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Analog mode selected\r\n");     
+    break;
+
+    case modeStepMotor:
+    case 'g':
+      mode = modeStepMotor;
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Step motor mode selected\r\n");     
     break;
 	
     case stepMotorRightRotation:

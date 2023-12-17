@@ -35,6 +35,7 @@
 #define modeSwitches                   'S'
 #define modeDigital                    'D'
 #define modeAnalog                     'A'
+#define modeStepMotor                  'G'
 
 #define multipleErrors                 'e'
 #define frameError                     'f'
@@ -63,7 +64,8 @@ typedef struct {
 	byte Tim1: 1; // Time for each display to update
 	byte Tim2: 1; // Time for the motor to swap rotation
     byte Tim3: 1; // Time for the stepMotor inertia
-	byte RX: 1;  // Recieve data in USART
+	byte RX: 1;   // Recieve data in USART
+    byte ROT: 1;  // Rotation of the stepMotor
 } FLAGS;
 
 volatile FLAGS flag; 
