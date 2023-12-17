@@ -37,8 +37,8 @@ const byte displayActivations[numDisplays] = {
 DISPLAYS *
 createDisplays() {
   DISPLAYS * displays = ( DISPLAYS * ) malloc ( sizeof ( DISPLAYS ) );
-
-  for ( unsigned char i = 0 ; i < numDisplays ; i++ )
+  byte i;
+  for ( i = 0 ; i < numDisplays ; i++ )
     displays->display[ i ].registerA = displayActivations[ i ];  
   return displays;
 }
@@ -57,7 +57,8 @@ writeInDisplay( DISPLAYS * displays ) {
 
 unsigned char
 updateRegisterDisplays( DISPLAYS * displays , char * word ) {
-  for ( unsigned char i = 0 ;  i < numDisplays ; i++ ) 
+  byte i;
+  for ( i = 0 ;  i < numDisplays ; i++ ) 
 	switch ( word[i] ) {
 		case 'A':
 		case 'a':

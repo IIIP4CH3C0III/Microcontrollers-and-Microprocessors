@@ -23,7 +23,6 @@ rotationStepMotor( STEP_MOTOR * st , uint16_t phaseIntended, byte origin ) {
       st->numSteps = (uint16_t)getPhaseDif( st , phaseIntended ) * completeRotationInSteps / 360;
   } 
 
-  PORTE = st->word[ st->position ];	
   if ( st->direction == '+' ){
     st->position++;
 
@@ -44,6 +43,9 @@ rotationStepMotor( STEP_MOTOR * st , uint16_t phaseIntended, byte origin ) {
     if ( st->phase < 0 )
       st->phase = 360 + st->phase ;
   }
+
+  PORTE = st->word[ st->position ];	
+
   return 0;
 }
 
@@ -57,18 +59,18 @@ getPhaseDif ( STEP_MOTOR * st , uint16_t phaseIntented ) {
   if ( phaseIntented > st->phase  ){    
 	dif = phaseIntented - st->phase ;
 	if ( dif > ( 360 - phaseIntented + st->phase ) ) {
-      st->direction = '+';                                 // rotation in Clockwise
+      st->direction = '-';                                 // rotation in Clockwise
 	  return (360 - phaseIntented + st->phase );
 	}
-	st->direction = '-';                                   // rotation in AntiClockwise
+	st->direction = '+';                                   // rotation in AntiClockwise
 	return dif;
   }
   
   dif = st->phase - phaseIntented;
   if ( dif > ( 360 - st->phase + phaseIntented ) ) {
- 	  st->direction = '-';                                 // rotation in AntiClockwise
+ 	  st->direction = '+';                                 // rotation in AntiClockwise
 	  return (360 -st->phase + phaseIntented );
   }
-  st->direction = '+';                                     // rotation in Clockwise
+  st->direction = '-';                                     // rotation in Clockwise
   return dif;
 }
