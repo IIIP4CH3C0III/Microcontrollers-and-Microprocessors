@@ -3,7 +3,7 @@
  *
  * Descript  : This is where is located the structs and functions related to function of the step motor
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 #ifndef STEPMOTOR_H

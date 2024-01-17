@@ -3,7 +3,7 @@
  *
  * Descript  : This where the functions related to the analog values
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 #include "analog.h"

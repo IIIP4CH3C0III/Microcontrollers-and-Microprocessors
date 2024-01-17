@@ -3,7 +3,7 @@
  *
  * Descript  : Handle struct and some definitions for the display
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 #ifndef DISPLAY_H
@@ -14,7 +14,7 @@
 #define frequencyDisplays              60 // counter for 0.5ms * 60 = 30 ms ~= 30 Hz
 #define frequencyBetweenDisplays       1  // counter for 0.5ms * 1  = 0.5  ms ~= 2000 Hz
 
-#define numDigits                      14
+#define numDigits                      15
 #define numDisplays                    4
 
 typedef struct{

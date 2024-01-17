@@ -3,7 +3,7 @@
  *
  * Descript  : Struct and fuctions related to the usart
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 #ifndef USART_H

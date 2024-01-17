@@ -28,6 +28,7 @@
 ;-----------------------------------------------------------------------------------------------------------------------------------------
 
 getADCvalue:
+  push r16
   lds r16, ADCSRA                     ; Get the data from RAM to temp
   sbr r16, 0b01000000                 ; Start the conversion 
   sts ADCSRA, r16                     ; Update the value in RAM
@@ -39,7 +40,7 @@ _loop:
 
   lds r16, ADCH                       ; Read the value from RAM
   sts analogBuffer, r16               ; Load the variable into RAM to access in C program
-  
+  pop r16
   ret
 
 ;-----------------------------------------------------------------------------------------------------------------------------------------

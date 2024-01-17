@@ -3,7 +3,7 @@
  *
  * Descript  : Contains the functions related to print information on the displays
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 
@@ -23,7 +23,8 @@ const byte displayDigits[numDigits] = {
                                        0xFF, // 
                                        0xBF, // -
                                        0x88, // A
-                                       0xA1  // D
+                                       0xA1, // D
+									   0b10011100 // G
                                       };
 
 const byte displayActivations[numDisplays] = {
@@ -88,6 +89,7 @@ updateRegisterDisplays( DISPLAYS * displays , char * word ) {
 
 		case 'G':
 		case 'g':
+		  displays->display[i].registerN = displayDigits[14];
 		  break;
 
 		case 'H':

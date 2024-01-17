@@ -1,9 +1,9 @@
 /* 
  * File name : motor.h
  *
- * Descript  : This where the protypes of the funtions related to the motor and the struct motor
+ * Descript  : This where the protypes of the functions related to the motor and the struct motor
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 
@@ -12,7 +12,7 @@
 
 #include "setup.h"
 
-#define timeMotorStop  10 // Counter reset for 0.5ms * 10 = 5 ms ~= 200 Hz
+#define timeMotorStop  255 // Counter reset for 0.5ms * 10 = 5 ms ~= 200 Hz
 
 typedef struct {
   byte state:     1 ;

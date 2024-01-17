@@ -3,7 +3,7 @@
  *
  * Descript  : This where the funtions related to the motor are.
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 #include "motor.h"
@@ -57,7 +57,7 @@ changeStateMotor( MOTOR * motor ) {
       setBit(PORTB,5);          // Start the rotation in the oter way   	
     else
       setBit(PORTB,6);          // Start the rotation in the oter way   	
-    return 0;
+	return 0;
   } 
   
   PORTB &= 0b10011111;       // Stop the rotation

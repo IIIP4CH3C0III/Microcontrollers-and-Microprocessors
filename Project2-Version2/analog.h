@@ -3,7 +3,7 @@
  *
  * Descript  : This where the structs and functions related to the analog values
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 #ifndef ANALOG_H

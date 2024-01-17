@@ -3,7 +3,7 @@
  *
  * Descript  : This where the inicialization of the hardware starts
  *
- * Author    : Fábio Pacheco
+ * Author    : Fábio Pacheco, Joana Sousa
  */
 
 #include "setup.h"

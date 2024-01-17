@@ -1,3 +1,12 @@
+/* 
+ * File name : usart.c
+ *
+ * Descript  : This where the functions related to the usart are.
+ *
+ * Author    : Fábio Pacheco, Joana Sousa
+ */
+
+
 #include "usart.h"
 
 ST_USART *

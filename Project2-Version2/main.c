@@ -1,3 +1,11 @@
+/* 
+ * File name : main.c
+ *
+ * Descript  : I don't think it needs description :)
+ *
+ * Author    : Fábio Pacheco, Joana Sousa
+ */
+
 #include "setup.h"
 #include "display.h"
 #include "motor.h"
@@ -9,7 +17,7 @@ void
 loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 , STEP_MOTOR * stepMotor , char word[ numDisplays ] );
 
 byte
-interptDigitaData( char status, ST_USART * st_usart ,  MOTOR * motor ,  STEP_MOTOR * stepMotor );
+interptData( char status, ST_USART * st_usart ,  MOTOR * motor ,  STEP_MOTOR * stepMotor );
 
 int
 main( ) {
@@ -41,10 +49,14 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
   }
 
   if( flag.Tim1 ) {
-    if ( !motor->direction )
-      snprintf( word , sizeof(byte) * numDisplays + 1 , "%c %02d", mode , motor->perDutyC );
-    else
-      snprintf( word , sizeof(byte) * numDisplays + 1 , "%c-%02d", mode , motor->perDutyC );
+    if ( mode != modeStepMotor ) {
+      if ( !motor->direction )
+        snprintf( word , sizeof(byte) * numDisplays + 1 , "%c %02d", mode , motor->perDutyC );
+      else
+        snprintf( word , sizeof(byte) * numDisplays + 1 , "%c-%02d", mode , motor->perDutyC );
+    } else
+        snprintf( word , sizeof(byte) * numDisplays + 1 , "%03d%c", stepMotor->phase , mode);
+    
 
     (void)updateRegisterDisplays( displays, word );
     flag.Tim1 = 0;
@@ -60,28 +72,28 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
     switch ( nowValue ) {
       case 0b00110010:
         if ( beforeValue == 0b00110011 && nowValue == 0b00110010 ) {
-          (void)interptDigitaData( decrementPoints, usart1, motor, stepMotor );
+          (void)interptData( decrementPoints, usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );
         }
  	    break;
 
    	  case 0b00110001:
         if ( beforeValue == 0b00110011 && nowValue == 0b00110001 ) {
-          (void)interptDigitaData( incrementPoints , usart1, motor, stepMotor );
+          (void)interptData( incrementPoints , usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );
         }
   	    break;
 
 	  case 0b00100011:
 	    if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
-          (void)interptDigitaData( invertMotor, usart1, motor, stepMotor );
+          (void)interptData( invertMotor, usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );	    	
 	    }
  	    break;
 
 	  case 0b00010011:
 	    if ( beforeValue == 0b00110011 && nowValue == 0b00010011 ) {
-          (void)interptDigitaData( stopMotor, usart1, motor, stepMotor );
+          (void)interptData( stopMotor, usart1, motor, stepMotor );
           (void)transmitStringUSART( usart1 );	    		    	
 	    }
 	    break;
@@ -92,7 +104,7 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
   // Digital mode will be always activated on background, because it's the only way to swap between modes, but what can happend is choosing only digital mode
   if( flag.RX ) {
     flag.RX = 0;
-    (void)interptDigitaData( (char) recieveStringUSART( usart1 ) , usart1, motor, stepMotor );
+    (void)interptData( (char) recieveStringUSART( usart1 ) , usart1, motor, stepMotor );
     (void)transmitStringUSART( usart1 );
   }
 
@@ -103,15 +115,15 @@ loop( DISPLAYS * displays , MOTOR * motor , ST_USART * usart1 ,  STEP_MOTOR * st
 
     nowValue = PINA & 0b00110011;  
     if ( beforeValue == 0b00110011 && nowValue == 0b00100011 ) {
-      (void)interptDigitaData( invertMotor, usart1, motor, stepMotor );
+      (void)interptData( invertMotor, usart1, motor, stepMotor );
       (void)transmitStringUSART( usart1 );	    	
     }
     beforeValue = PINA & 0b00110011;  
   }
 
-  if( flag.Tim3 && stepMotor->numSteps != 0 ) {
-    rotationStepMotor( stepMotor , 0 , 0 );          // No need to give parameters now, they are already in use
+  if( flag.Tim3 && flag.ROT ) {
     flag.Tim3 = 0;
+    rotationStepMotor( stepMotor , 0 , 0 );          // No need to give parameters now, they are already in use
   }
 }
 
@@ -147,7 +159,7 @@ ISR ( TIMER0_COMP_vect ) {
 }
 
 byte
-interptDigitaData( char status , 
+interptData( char status , 
                    ST_USART * st_usart , 
                    MOTOR * motor,  
 				   STEP_MOTOR * stepMotor 
@@ -198,7 +210,7 @@ interptDigitaData( char status ,
     case decrementPoints:
       if ( motor->perDutyC > 0 )
         motor->perDutyC -= motor->points ;
-      if ( motor->perDutyC <= 0 )
+      if ( motor->perDutyC > 100 )
         motor->perDutyC = 0;
       motor->absDutyC = (byte)linearSolver( 255, 0, 100, 0, motor->perDutyC);
       OCR2  = motor->absDutyC;             
@@ -230,6 +242,12 @@ interptDigitaData( char status ,
       mode = modeAnalog;
       snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Analog mode selected\r\n");     
     break;
+
+    case modeStepMotor:
+    case 'g':
+      mode = modeStepMotor;
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Step motor mode selected\r\n");     
+    break;
 	
     case stepMotorRightRotation:
 	case 'r':
@@ -252,18 +270,18 @@ interptDigitaData( char status ,
     break;
     	
 	case stepMotorMove000origin:
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 0 degrees\r\n");
       rotationStepMotor( stepMotor, 0,  originRelated );
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 0 degrees\r\n Degrees:%d\r\n" , stepMotor->phase);
 	break;
 
 	case stepMotorMove090origin:
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 90 degrees\r\n");
       rotationStepMotor( stepMotor, 90, originRelated );
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 90 degrees\r\n Degrees:%d\r\n" , stepMotor->phase);
 	break;
 
 	case stepMotorMove180origin:
+      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 180 degrees\r\n");
       rotationStepMotor( stepMotor, 180, originRelated );
-      snprintf( st_usart->transmitBuffer , BUFFER_SIZE , "Action:\r\n Move to origin 180 degrees\r\n Degrees:%d\r\n" , stepMotor->phase);
 	break;
   }	
   return 0;
